@@ -40,14 +40,14 @@ jobs:
         include:
         - module: .
           engine: sqlite
-          commands: "set -euo pipefail\nsource_root=\"$PWD\"\nnpm --prefix ui ci\n\
-            npm --prefix ui run type-check\nnpm --prefix ui run build\ncd test\nwippy\
-            \ update\nwippy lint  \nwippy test  2>&1 | tee .wippy-test.log\nsed -E\
-            \ 's/\\x1B\\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log\n\
-            awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/\
-            \ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END {\
-            \ exit(empty || failed || !passed) }' .wippy-test.clean.log\ncd \"$source_root\"\
-            \nversion=$(jq -er --arg path . '.[$path]' .release-please-manifest.json)\n\
+          commands: "set -euo pipefail\nsource_root=\"$PWD\"\nexport TMPDIR=\"$source_root/.scratch\"\
+            \nmkdir -p \"$TMPDIR\"\nnpm --prefix ui ci\nnpm --prefix ui run type-check\n\
+            npm --prefix ui run build\ncd test\nwippy update\nwippy lint  \nwippy\
+            \ test  2>&1 | tee .wippy-test.log\nsed -E 's/\\x1B\\[[0-?]*[ -/]*[@-~]//g'\
+            \ .wippy-test.log > .wippy-test.clean.log\nawk '/No tests found/ { empty=1\
+            \ } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/\
+            \ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log\n\
+            cd \"$source_root\"\nversion=$(jq -er --arg path . '.[$path]' .release-please-manifest.json)\n\
             wippy publish --config . --version \"$version\" --dry-run --create --module-visibility\
             \ private --module-type plugin --embed acme.starter:ui_fs\n"
         - module: .
@@ -55,6 +55,10 @@ jobs:
           commands: 'set -euo pipefail
 
             source_root="$PWD"
+
+            export TMPDIR="$source_root/.scratch"
+
+            mkdir -p "$TMPDIR"
 
             npm --prefix ui ci
 
