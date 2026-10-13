@@ -42,10 +42,12 @@ jobs:
           engine: sqlite
           commands: "set -euo pipefail\nsource_root=\"$PWD\"\nnpm --prefix ui ci\n\
             npm --prefix ui run type-check\nnpm --prefix ui run build\ncd test\nwippy\
-            \ update\nwippy lint  \nwippy test  2>&1 | tee .wippy-test.log\n! grep\
-            \ -q 'No tests found' .wippy-test.log\n! grep -Eq '(^|[[:space:]])FAILED([[:space:]]|$)'\
-            \ .wippy-test.log\ngrep -Eq '(^|[[:space:]])PASSED([[:space:]]|$)' .wippy-test.log\n\
-            cd \"$source_root\"\nversion=$(jq -er --arg path . '.[$path]' .release-please-manifest.json)\n\
+            \ update\nwippy lint  \nwippy test  2>&1 | tee .wippy-test.log\nsed -E\
+            \ 's/\\x1B\\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log\n\
+            awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/\
+            \ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END {\
+            \ exit(empty || failed || !passed) }' .wippy-test.clean.log\ncd \"$source_root\"\
+            \nversion=$(jq -er --arg path . '.[$path]' .release-please-manifest.json)\n\
             wippy publish --config . --version \"$version\" --dry-run --create --module-visibility\
             \ private --module-type plugin --embed acme.starter:ui_fs\n"
         - module: .
@@ -83,11 +85,11 @@ jobs:
             wippy test --profile postgres --set "vars.pg_database=${databases[0]}"
             --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
 
-            ! grep -q ''No tests found'' .wippy-test.log
+            sed -E ''s/\x1B\[[0-?]*[ -/]*[@-~]//g'' .wippy-test.log > .wippy-test.clean.log
 
-            ! grep -Eq ''(^|[[:space:]])FAILED([[:space:]]|$)'' .wippy-test.log
-
-            grep -Eq ''(^|[[:space:]])PASSED([[:space:]]|$)'' .wippy-test.log
+            awk ''/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/
+            { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty
+            || failed || !passed) }'' .wippy-test.clean.log
 
             cd "$source_root"
 
