@@ -7,7 +7,10 @@ name: CI
   pull_request:
     branches:
     - main
-  workflow_call: {}
+  workflow_call:
+    secrets:
+      SOURCE_READ_TOKEN:
+        required: false
   workflow_dispatch: {}
 permissions:
   contents: read
@@ -39,7 +42,7 @@ jobs:
           engine: sqlite
           commands: "set -euo pipefail\nsource_root=\"$PWD\"\nnpm --prefix ui ci\n\
             npm --prefix ui run type-check\nnpm --prefix ui run build\ncd test\nwippy\
-            \ update\nwippy lint \nwippy test  2>&1 | tee .wippy-test.log\n! grep\
+            \ update\nwippy lint  \nwippy test  2>&1 | tee .wippy-test.log\n! grep\
             \ -q 'No tests found' .wippy-test.log\n! grep -Eq '(^|[[:space:]])FAILED([[:space:]]|$)'\
             \ .wippy-test.log\ngrep -Eq '(^|[[:space:]])PASSED([[:space:]]|$)' .wippy-test.log\n\
             cd \"$source_root\"\nversion=$(jq -er --arg path . '.[$path]' .release-please-manifest.json)\n\
@@ -74,7 +77,7 @@ jobs:
 
             databases+=("$database")
 
-            wippy lint --profile postgres --set "vars.pg_database=${databases[0]}"
+            wippy lint  --profile postgres --set "vars.pg_database=${databases[0]}"
             --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
 
             wippy test --profile postgres --set "vars.pg_database=${databases[0]}"
@@ -124,10 +127,8 @@ jobs:
         repository: kicksideai/kickside
         ref: main
         path: .siblings/kickside
-        persist-credentials: false
         token: ${{ secrets.SOURCE_READ_TOKEN || github.token }}
-    - name: Install Lua fixture preparation dependencies
-      run: python3 -m pip install PyYAML
+        persist-credentials: false
     - name: Build, lint and Lua module tests
       run: ${{ matrix.commands }}
     defaults:
