@@ -1,0 +1,40 @@
+{
+  "repository": "module",
+  "checks": [],
+  "modules": {
+    ".": {
+      "path": ".",
+      "organization": "acme",
+      "module": "starter",
+      "type": "plugin",
+      "visibility": "private",
+      "embed": [
+        "acme.starter:ui_fs"
+      ],
+      "targets": [
+        "init",
+        "setup",
+        "check",
+        "build",
+        "dev",
+        "lint",
+        "typecheck",
+        "test",
+        "test-pg",
+        "postgres-up",
+        "postgres-down",
+        "sync-handbook",
+        "check-handbook",
+        "verify",
+        "release-check",
+        "publish"
+      ],
+      "harness": "test",
+      "profiles": [
+        "postgres"
+      ],
+      "pg_database": "acme_test_starter",
+      "extra_tests": []
+    }
+  }
+}

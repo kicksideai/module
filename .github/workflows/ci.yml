@@ -1,0 +1,134 @@
+name: CI
+'on':
+  push:
+    branches:
+    - main
+    - ci-bootstrap
+  pull_request:
+    branches:
+    - main
+  workflow_call: {}
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  WIPPY_REGISTRY: https://hub.wippy.ai
+  PGHOST: 127.0.0.1
+  PGPORT: '5433'
+  PGUSER: kickside
+  PGPASSWORD: kickside
+  PYTHONDONTWRITEBYTECODE: '1'
+  ENCRYPTION_KEY: '0000000000000000000000000000000000000000000000000000000000000000'
+  RELEASE_PR: ${{ startsWith(github.head_ref, 'release-please--') || startsWith(github.ref_name,
+    'release-please--') }}
+jobs:
+  secret-scan:
+    uses: kicksideai/.github/.github/workflows/secret-scan.yml@2b3e7a7b77b9d07330fdb97bff7ce0d43411f3b8
+  modules:
+    name: ${{ matrix.module }} / ${{ matrix.engine }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - module: .
+          engine: sqlite
+          commands: "set -euo pipefail\nsource_root=\"$PWD\"\nnpm --prefix ui ci\n\
+            npm --prefix ui run type-check\nnpm --prefix ui run build\ncd test\nwippy\
+            \ update\nwippy lint \nwippy test  2>&1 | tee .wippy-test.log\n! grep\
+            \ -q 'No tests found' .wippy-test.log\n! grep -Eq '(^|[[:space:]])FAILED([[:space:]]|$)'\
+            \ .wippy-test.log\ngrep -Eq '(^|[[:space:]])PASSED([[:space:]]|$)' .wippy-test.log\n\
+            cd \"$source_root\"\nversion=$(jq -er --arg path . '.[$path]' .release-please-manifest.json)\n\
+            wippy publish --config . --version \"$version\" --dry-run --create --module-visibility\
+            \ private --module-type plugin --embed acme.starter:ui_fs\n"
+        - module: .
+          engine: postgres
+          commands: 'set -euo pipefail
+
+            source_root="$PWD"
+
+            npm --prefix ui ci
+
+            npm --prefix ui run type-check
+
+            npm --prefix ui run build
+
+            cd test
+
+            wippy update
+
+            databases=()
+
+            cleanup_databases() { for database in "${databases[@]}"; do dropdb "$database";
+            done; }
+
+            trap cleanup_databases EXIT
+
+            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_0"
+
+            createdb "$database"
+
+            databases+=("$database")
+
+            wippy lint --profile postgres --set "vars.pg_database=${databases[0]}"
+            --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
+
+            wippy test --profile postgres --set "vars.pg_database=${databases[0]}"
+            --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
+
+            ! grep -q ''No tests found'' .wippy-test.log
+
+            ! grep -Eq ''(^|[[:space:]])FAILED([[:space:]]|$)'' .wippy-test.log
+
+            grep -Eq ''(^|[[:space:]])PASSED([[:space:]]|$)'' .wippy-test.log
+
+            cd "$source_root"
+
+            version=$(jq -er --arg path . ''.[$path]'' .release-please-manifest.json)
+
+            wippy publish --config . --version "$version" --dry-run --create --module-visibility
+            private --module-type plugin --embed acme.starter:ui_fs
+
+            '
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: kickside
+          POSTGRES_PASSWORD: kickside
+          POSTGRES_DB: postgres
+        ports:
+        - 5433:5432
+        options: --health-cmd "pg_isready -U kickside -d postgres" --health-interval
+          5s --health-timeout 5s --health-retries 10
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+        path: source
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      with:
+        node-version: '22'
+    - uses: kicksideai/.github/actions/setup-wippy@2b3e7a7b77b9d07330fdb97bff7ce0d43411f3b8
+      with:
+        version: 0.3.47a
+        hub-url: https://hub.wippy.ai
+    - name: Check out kickside module sources
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        repository: kicksideai/kickside
+        ref: main
+        path: .siblings/kickside
+        persist-credentials: false
+    - name: Install Lua fixture preparation dependencies
+      run: python3 -m pip install PyYAML
+    - name: Build, lint and Lua module tests
+      run: ${{ matrix.commands }}
+    defaults:
+      run:
+        working-directory: source

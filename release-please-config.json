@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "include-component-in-tag": true,
+  "separate-pull-requests": false,
+  "bump-minor-pre-major": true,
+  "last-release-sha": "2e1a7cf862af8347ee6fcdf8145ff6aafd412353",
+  "packages": {
+    ".": {
+      "component": "starter",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}
