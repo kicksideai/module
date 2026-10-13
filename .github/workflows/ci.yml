@@ -125,6 +125,7 @@ jobs:
         ref: main
         path: .siblings/kickside
         persist-credentials: false
+        token: ${{ secrets.SOURCE_READ_TOKEN || github.token }}
     - name: Install Lua fixture preparation dependencies
       run: python3 -m pip install PyYAML
     - name: Build, lint and Lua module tests

@@ -9,7 +9,7 @@ EMBED  := --embed ui_fs
 SHELL := bash
 .SHELLFLAGS := -o pipefail -ec
 
-.PHONY: init setup build dev lint typecheck test test-pg postgres-up postgres-down sync-handbook check-handbook
+.PHONY: init setup build dev lint typecheck test test-pg postgres-up postgres-down
 init:
 	node scripts/init-module.mjs --organization "$(ORG)" --module "$(MODULE_NAME)" --title "$(TITLE)" $(if $(NAMESPACE),--namespace "$(NAMESPACE)",) $(if $(TAG),--tag "$(TAG)",) $(if $(GITHUB_OWNER),--github-owner "$(GITHUB_OWNER)",)
 setup:
@@ -35,7 +35,3 @@ postgres-up:
 	docker compose -f compose.test.yaml up -d --wait
 postgres-down:
 	docker compose -f compose.test.yaml down -v
-sync-handbook:
-	node scripts/sync-handbook.mjs --ref "$(if $(HANDBOOK_REF),$(HANDBOOK_REF),main)"
-check-handbook:
-	node scripts/sync-handbook.mjs --check --ref "$(if $(HANDBOOK_REF),$(HANDBOOK_REF),main)"

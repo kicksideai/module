@@ -8,20 +8,19 @@ Follow the [organization contribution guide](https://github.com/kicksideai/.gith
 ## Development and testing
 
 Install the current [Wippy CLI](https://hub.wippy.ai/releases), Node.js 22 or
-newer, npm, Make, and Python 3. Read [AGENTS.md](AGENTS.md) and the
-[developer handbook](docs/kickside-development/developer-handbook.md).
+newer, npm and Make. Read the
+[module authoring guide](https://kicksideai.github.io/docs/developer/module-authoring/).
 When contributing to the template itself, keep its uninitialized identity;
-when creating your own module, follow the [quick start](README.md#quick-start).
+when creating your own module, follow the [quick start](README.md).
 
 ```sh
-make verify
+make setup lint typecheck build test
 make postgres-up
 make test-pg
 make postgres-down
 ```
 
-`make verify` checks setup, identity, dependency declarations, documentation
-links, lint, frontend types and builds, and the SQLite harness. PostgreSQL is
+These commands check setup, lint, frontend types and builds, and the SQLite harness. PostgreSQL is
 required for persistence or migration changes. Describe the registry owner and
 contract being changed, test public behavior, and regenerate `static/` from
 `ui/src`. Never commit credentials or local Wippy state.
