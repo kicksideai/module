@@ -132,7 +132,7 @@ jobs:
       with:
         repository: kicksideai/kickside
         ref: main
-        path: .siblings/kickside
+        path: kickside
         token: ${{ secrets.SOURCE_READ_TOKEN || github.token }}
         persist-credentials: false
     - name: Build, lint and Lua module tests
