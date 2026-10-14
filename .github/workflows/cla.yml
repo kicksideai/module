@@ -15,5 +15,5 @@ permissions:
 
 jobs:
   check:
-    uses: kicksideai/.github/.github/workflows/cla.yml@299f0f9b1d5e73ab490eb00d114d62375a579359
+    uses: kicksideai/.github/.github/workflows/cla.yml@101b5c55edf8c71bb30a971a6c8d94d626d8216f
     secrets: inherit
