@@ -17,6 +17,6 @@ make setup
 make lint typecheck build test
 ```
 
-Read the [module authoring guide](https://kicksideai.github.io/docs/developer/module-authoring/) and the module’s [Makefile](Makefile) for the development commands. Lua unit suites and wippy harnesses ship with the template.
+Read the [module authoring guide](https://kicksideai.github.io/docs/building-modules/) and the module’s [Makefile](Makefile) for the development commands. Lua unit suites and wippy harnesses ship with the template.
 
 License: [MIT](LICENSE). Dependencies retain their respective licenses.

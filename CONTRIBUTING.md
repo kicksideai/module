@@ -9,7 +9,7 @@ Follow the [organization contribution guide](https://github.com/kicksideai/.gith
 
 Install the current [Wippy CLI](https://hub.wippy.ai/releases), Node.js 22 or
 newer, npm and Make. Read the
-[module authoring guide](https://kicksideai.github.io/docs/developer/module-authoring/).
+[module authoring guide](https://kicksideai.github.io/docs/building-modules/).
 When contributing to the template itself, keep its uninitialized identity;
 when creating your own module, follow the [quick start](README.md).
 
