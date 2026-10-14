@@ -1,4 +1,4 @@
-# acme/starter — initialize, verify, and publish a standalone Kickside module.
+# acme/starter — initialize, verify, and publish a standalone KickSide module.
 MODULE := starter
 TYPE   := plugin
 VIS    := private

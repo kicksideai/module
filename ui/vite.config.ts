@@ -6,7 +6,7 @@ import { defineConfig } from 'vite'
 
 const moduleRoot = fileURLToPath(new URL('.', import.meta.url))
 
-// The Kickside shell serves these packages through its import map; they must
+// The KickSide shell serves these packages through its import map; they must
 // stay external so the bundle never ships its own copy (a bundled copy both
 // bloats the artifact and breaks on `process.env` references in library code).
 const shellProvided = [
