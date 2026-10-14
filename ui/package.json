@@ -34,7 +34,7 @@
   "wippy": {
     "tagName": "acme-starter",
     "type": "component",
-    "description": "Renders the acme/starter module status inside Kickside as a host-mounted web component. It accepts no props, loads its data through the authenticated Wippy proxy, and fills the host-provided content area using theme tokens that work in light and dark modes.",
+    "description": "Renders the acme/starter module status inside KickSide as a host-mounted web component. It accepts no props, loads its data through the authenticated Wippy proxy, and fills the host-provided content area using theme tokens that work in light and dark modes.",
     "props": {
       "type": "object",
       "properties": {}
