@@ -2,7 +2,7 @@ version: '1.0'
 workspace:
   replacements:
     acme/starter: ..
-    kickside/contract: ../../.siblings/kickside/core/contract
+    kickside/contract: ../../kickside/core/contract
 override:
   acme.starter.security:user_security_scope:default: app:user
 vars:
