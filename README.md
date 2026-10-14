@@ -17,8 +17,8 @@ make lint typecheck build test
 
 The [Makefile](Makefile) owns the commands. See the [module authoring guide](https://github.com/kicksideai/docs/blob/main/building-modules/index.md) for contracts, requirements, and application integration.
 
-![The starter web component shows log entries persisted by the example module](https://raw.githubusercontent.com/kicksideai/docs/main/using/assets/module/starter.png)
+![The starter status page shows an empty log in a fresh demonstration installation](https://raw.githubusercontent.com/kicksideai/docs/main/using/assets/module/starter.png)
 
-License: [MIT](LICENSE).
+License: [MIT](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md).
 
 [Documentation](https://github.com/kicksideai/docs) · [KickSide](https://kickside.ai)
