@@ -1,15 +1,13 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/kickside-logo-dark.png">
-  <img src="assets/kickside-logo-light.png" alt="KickSide" width="320">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/kicksideai/docs/main/getting-started/assets/brand/kickside-logo-dark.png">
+  <img src="https://raw.githubusercontent.com/kicksideai/docs/main/getting-started/assets/brand/kickside-logo-light.png" alt="KickSide" width="320">
 </picture>
 
 # KickSide module template
 
-A template for an independently installable module with Lua APIs, persistence, migrations, a web component and Lua unit-test harnesses for SQLite and PostgreSQL.
+A working `acme/starter` module scaffold. It writes log entries through an automation sink and Block, persists them with migrations, and exposes a status API and Vue web component. Lua harnesses exercise SQLite and PostgreSQL.
 
-[Documentation](https://kicksideai.github.io/docs/) · [Get started](https://kicksideai.github.io/docs/getting-started/) · [KickSide](https://kickside.ai) · [Organization](https://github.com/kicksideai)
-
-Use [this template](https://github.com/kicksideai/module/generate), then initialize its identity:
+Create a repository from [this template](https://github.com/kicksideai/module/generate), then initialize its identity:
 
 ```sh
 make init ORG=your-org MODULE_NAME=your-module TITLE="Your module"
@@ -17,6 +15,10 @@ make setup
 make lint typecheck build test
 ```
 
-Read the [module authoring guide](https://kicksideai.github.io/docs/building-modules/) and the module’s [Makefile](Makefile) for the development commands. Lua unit suites and wippy harnesses ship with the template.
+The [Makefile](Makefile) owns the commands. See the [module authoring guide](https://github.com/kicksideai/docs/blob/main/building-modules/index.md) for contracts, requirements, and application integration.
 
-License: [MIT](LICENSE). Dependencies retain their respective licenses.
+![The starter web component shows log entries persisted by the example module](https://raw.githubusercontent.com/kicksideai/docs/main/using/assets/module/starter.png)
+
+License: [MIT](LICENSE).
+
+[Documentation](https://github.com/kicksideai/docs) · [KickSide](https://kickside.ai)
