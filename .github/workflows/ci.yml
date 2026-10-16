@@ -29,7 +29,7 @@ env:
     'release-please--') }}
 jobs:
   secret-scan:
-    uses: kicksideai/.github/.github/workflows/secret-scan.yml@c520ff363534deb0298abd27c42ab360960d5431
+    uses: kicksideai/.github/.github/workflows/secret-scan.yml@main
   modules:
     name: ${{ matrix.module }} / ${{ matrix.engine }}
     runs-on: ubuntu-24.04
@@ -123,7 +123,7 @@ jobs:
     - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
       with:
         node-version: '22'
-    - uses: kicksideai/.github/actions/setup-wippy@c520ff363534deb0298abd27c42ab360960d5431
+    - uses: kicksideai/.github/actions/setup-wippy@main
       with:
         version: 0.3.47a
         hub-url: https://hub.wippy.ai
