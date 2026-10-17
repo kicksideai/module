@@ -3,6 +3,7 @@ MODULE := starter
 TYPE   := plugin
 VIS    := private
 EMBED  := --embed ui_fs
+VERSION ?= $(shell node -p "require('./.release-please-manifest.json')['.']")
 
 # pipefail lets the test targets both stream runner output and keep its exit
 # code while grepping the log afterwards.
@@ -45,7 +46,6 @@ check-handbook:
 verify: setup check lint typecheck build test
 release-check: verify
 	wippy auth status
-	wippy publish --dry-run --create --module-visibility $(VIS) --module-type $(TYPE) $(EMBED)
-publish: build
-	@echo "Releases use GitHub Release Please (.github/workflows/release.yml)." >&2
-	@exit 1
+	wippy publish --version "$(VERSION)" --dry-run --create --module-visibility $(VIS) --module-type $(TYPE) $(EMBED)
+publish: release-check
+	wippy publish --version "$(VERSION)" --create --module-visibility $(VIS) --module-type $(TYPE) $(EMBED)

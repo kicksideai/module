@@ -15,6 +15,18 @@ make setup
 make lint typecheck build test
 ```
 
+`make init` also accepts `NAMESPACE`, `TAG`, and `GITHUB_OWNER` (default: `ORG`). It runs once per checkout. Commit the rebuilt `static/` bundle with your source changes.
+
+Run the PostgreSQL suite before changing SQL or migrations. `make postgres-up` starts PostgreSQL on port 5433 with an empty test database:
+
+```sh
+make postgres-up
+make test-pg
+make postgres-down
+```
+
+`make release-check` runs every gate and a publish dry run; `make publish` publishes. Both use the version in `.release-please-manifest.json` unless `VERSION=x.y.z` is set, and require `wippy auth login`.
+
 The [Makefile](Makefile) owns the commands. The bundled [developer handbook](docs/README.md) is an exact copy of the canonical handbook shipped by KickSide; `make sync-handbook` updates it and `make check-handbook` detects drift. See the [module authoring guide](https://github.com/kicksideai/docs/blob/main/building-modules/index.md) for contracts, requirements, and application integration.
 
 ![The starter status page shows an empty log in a fresh demonstration installation](https://raw.githubusercontent.com/kicksideai/docs/main/using/assets/module/starter.png)

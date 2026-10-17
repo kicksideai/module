@@ -7,10 +7,7 @@ name: CI
   pull_request:
     branches:
     - main
-  workflow_call:
-    secrets:
-      SOURCE_READ_TOKEN:
-        required: false
+  workflow_call: {}
   workflow_dispatch: {}
 permissions:
   contents: read
@@ -127,14 +124,6 @@ jobs:
       with:
         version: 0.3.47a
         hub-url: https://hub.wippy.ai
-    - name: Check out kickside module sources
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      with:
-        repository: kicksideai/kickside
-        ref: main
-        path: kickside
-        token: ${{ secrets.SOURCE_READ_TOKEN || github.token }}
-        persist-credentials: false
     - name: Check template and handbook provenance
       run: |
         mkdir -p "$GITHUB_WORKSPACE/.scratch"

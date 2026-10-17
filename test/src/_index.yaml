@@ -32,7 +32,7 @@ entries:
       group: Acme Starter
       suite: acme_starter
     source: file://log_test.lua
-    modules: [funcs, registry, security, channel, time]
+    modules: [funcs, registry, security, channel, time, uuid]
     imports:
       test: wippy.test:test
       repo: acme.starter.persist:repo
