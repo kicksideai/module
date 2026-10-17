@@ -35,9 +35,9 @@ In the template, `make verify` performs dependency setup, invariant
 checks, initializer test, Wippy lint, frontend typecheck/build, and SQLite
 suites. For SQL changes also run `make postgres-up`, `make test-pg`, and
 `make postgres-down`. Inspect the emitted `static/index.js` and registry
-`view.component.entry_point`. `make release-check` includes an authenticated
-publish dry run. The template disables direct `make publish`; reviewed changes
-release through its GitHub Release Please workflow. Use the
+`view.component.entry_point`. `make release-check` runs the gates and an
+authenticated publish dry run; `make publish` then publishes. Both use the
+version in `.release-please-manifest.json` unless `VERSION` is set. Use the
 module's checked-in Makefile for its exact targets; never call package-manager
 or Vite build commands directly in a Wippy repository. Authenticate with
 `wippy auth login` and check `wippy auth status` before the release check.

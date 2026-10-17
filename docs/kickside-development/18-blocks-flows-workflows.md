@@ -133,8 +133,8 @@ A Workflow is a component whose authoritative definition is its event stream.
 Published versions are immutable. Its executable nodes are exact Blocks or
 exact published nested Workflows.
 
-Start, Finish, Error, Condition, Loop, For each, and Combine are structural
-nodes. Start, Finish, and Error compile into routing boundaries; they are not
+The structural node kinds are `start`, `finish`, `error`, `branch`
+(Condition), `cycle` (Loop), `for_each` (For each), and `combine`. Start, Finish, and Error compile into routing boundaries; they are not
 placeholder functions.
 
 Publishing folds and validates the document, freezes the compiled version, and

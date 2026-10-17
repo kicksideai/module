@@ -3,8 +3,8 @@
 Components are the canonical resource model for things users can create, share,
 open, render, and delete.
 
-File citations in backticks (for example `core/component/src/types.lua:52`) are
-monorepo-relative source grounding. The page stands alone; the citations tell you
+File citations in backticks (for example `core/component/src/types.lua`) are
+paths in the kicksideai/kickside repository. The page stands alone; the citations tell you
 where each rule is pinned in code or tests.
 
 Use a component when the thing has any of these properties:
@@ -44,17 +44,17 @@ One component row carries planes that must never be mixed:
   - **Home:** `kickside_components`
 
 Table names and the DB resource (the host-injected `target_db` requirement) are
-pinned in `core/component/src/types.lua:13-20`. Public meta is written only
+pinned in `core/component/src/types.lua`. Public meta is written only
 through `component.set_meta`. `component_id` is a UUID v7 only on the
 imperative register path; provisioned/autoinit components use a deterministic
-HMAC-SHA256 id in v5 shape (`core/component/src/autoinit.lua:119-124`), as do
+HMAC-SHA256 id in v5 shape (`core/component/src/autoinit.lua`), as do
 thread-upsert natural-key ids.
 
 ## Declare A Component Kind
 
 A component kind is one `contract.binding` whose registry id becomes the
 component's `impl_id`. The binding IS the kind — declaration and runtime are a
-single entry (`core/component/src/autoinit.lua:5-9`). An author declares:
+single entry (`core/component/src/autoinit.lua`). An author declares:
 
 1. A `contract.binding` implementing `kickside.contract:component`, with
    `meta.class` (broad UI class), `meta.title`, `meta.icon`.
@@ -93,7 +93,7 @@ allowed. A fixed-parent refusal returns `errors.INVALID` with details
 `{reason="placement_fixed", kind=<child impl>}`. Omitting `fixed` allows moves
 between the declared parent kinds.
 
-Complete real example, the uploads kind (`platform/uploads/src/_index.yaml:348-381`):
+Complete real example, the uploads kind (`platform/uploads/src/attachments/_index.yaml`):
 
 ```yaml
   - name: uploads_component
@@ -109,7 +109,6 @@ Complete real example, the uploads kind (`platform/uploads/src/_index.yaml:348-3
         scope: user
       retention:
         event_days: 7
-        drain_aware: true
       projections:
         - kind: "kickside.uploads:summary"
           worker_ref: "func://kickside.uploads.persist:uploads_projection_worker"
@@ -131,7 +130,7 @@ Complete real example, the uploads kind (`platform/uploads/src/_index.yaml:348-3
 ```
 
 The deletable func named by the binding has this shape
-(`platform/uploads/src/binding/delete_uploads_func.lua:12,55`):
+(`platform/uploads/src/binding/delete_uploads_func.lua`):
 
 ```lua
 local function handle(request_dto)   -- reads ctx.get("component_id")
@@ -143,14 +142,14 @@ return { handle = handle }
 
 A kind created on demand (KB, connection) omits `provision:` and is created
 imperatively via the service. Note `meta.class` is an array; autoinit reads the
-first element as the provisioned class (`core/component/src/autoinit.lua:219-228`).
+first element as the provisioned class (`core/component/src/autoinit.lua`).
 
 ## Component Service API
 
 Contract id: `kickside.component:component_service`
-(`core/component/src/types.lua:71-74`). Obtain an actor-bound instance through
+(`core/component/src/types.lua`). Obtain an actor-bound instance through
 the `component` client library (`component.get_service()`,
-`core/component/src/component.lua:46-65`) or open the contract under the current, authenticated security frame.
+`core/component/src/component.lua`) or open the contract under the current, authenticated security frame.
 Do not synthesize an actor or scope to select execution identity. The client library is the
 `kickside.component:component` `library.lua` entry; pull it into a lua entry
 via
@@ -161,7 +160,7 @@ imports:
 ```
 
 On an opened instance you call the contract method itself — `svc:register(dto)`,
-`svc:set_meta(dto)` (`platform/knowledge/src/registry/knowledge_bases.lua:199`);
+`svc:get(dto)` (`platform/knowledge/src/registry/knowledge_bases.lua`);
 the underlying-function column names the `function.lua` handler behind each
 method, not a callable.
 
@@ -179,7 +178,7 @@ method, not a callable.
   - **Argument shape:** flat DTO `{ component_ids?, impl_ids?, parent_id?, path_prefix?, meta?, include?, order_by?, limit?, offset?, access_mask?, actor_id?, scope? }`. Actor-scoped by default; `actor_id` (read-as) or `scope:"all"` require the `list_all` capability
 - **`set_meta`**
   - **Underlying function:** `set_meta_component(dto)`
-  - **Argument shape:** `{ component_id, fields, delete_keys? }`. Client helper `component.set_meta(component_id, fields, opts?)` (`core/component/src/component.lua:612-640`)
+  - **Argument shape:** `{ component_id, fields, delete_keys? }`. Client helper `component.set_meta(component_id, fields, opts?)` (`core/component/src/component.lua`)
 - **`update`**
   - **Underlying function:** `update_component(dto)`
   - **Argument shape:** `{ component_id, expected_revision?:integer, commands:[{ type:"SET_CONTEXT"\|"PATCH_CONTEXT"\|"SET_META", payload }] }` → `{ component_id, changes_made, context_revision, results, success }`. The batch applies atomically. Every context command advances the row's `context_revision`; `PATCH_CONTEXT` merges under the row lock, so concurrent patches to different keys keep every key, and concurrent writes to the same key resolve last-writer-wins. Conflict detection uses subject-scoped `expect` on the component's thread; projections fold from events; components do not own private event stores. Optional `expected_revision` is the context-subject form of `expect = { subject = "context", version = expected_revision }`, checked against the existing `context_revision` under the component row lock before any command writes. A mismatch returns CONFLICT with `{ reason = "version_mismatch", subject = "context", version = current_revision, expected = expected_revision }` and the entire batch writes nothing. Without the field, writes keep their existing behavior. Read the revision with private context through `get_access_context({ component_id, include_context = true })`. Client helper `component.update(component_id, commands, { expected_revision = revision })`
@@ -201,13 +200,14 @@ method, not a callable.
 
 The client library also exposes higher-level openers, preferred over raw
 contract calls: `component.open(id, required_access, target_contract_id?)`,
-`component.open_by_meta`, `component.get_context`,
-`component.read_context(id, required_access)` (→ `{ context, revision }` for a
-compare-and-set write-back through `component.update`),
+`component.open_by_meta`, `component.get_context(id, required_access)`,
 `component.validate_access(id, required_access)`, plus trusted no-actor reads
 `component.open_private`, `component.get_private_context`,
 `component.list_system`, `component.system_delete`
-(`core/component/src/component.lua:642-665`).
+(exports at the end of `core/component/src/component.lua`). For a
+compare-and-set write-back through `component.update`, read the context and its
+`context_revision` from the component service `get_access_context` with
+`include_context = true`.
 
 Client operations return `(value, error?)`. Check the error before using the
 result. Service methods retain their declared domain result shapes; do not
@@ -231,8 +231,8 @@ The public/private split is enforced: `set_meta` rejects a fixed denylist of
 keys case-insensitively — `config`, `private_context`, `context`, `secret(s)`,
 `credential(s)`, `token(s)`, `access_token`, `api_key`, `password`, `auth`,
 `actor_id`, `execution_identity`, and similar — via
-`FORBIDDEN_PUBLIC_META_KEYS` (`core/component/src/types.lua:27-50`, enforced at
-`core/component/src/persist/ops.lua:136-148` for both create-time
+`FORBIDDEN_PUBLIC_META_KEYS` (`core/component/src/types.lua`, enforced at
+`core/component/src/persist/ops.lua` for both create-time
 `initial_meta` and every `set_meta`).
 
 Write paths are separate: public meta goes through `set_meta`; private context
@@ -256,11 +256,11 @@ Use private context for:
 Do not store UI-only counts in private context. Do not use private context as an
 audit log. Real pattern: a connection stores credentials in `private_context`
 and only `{title, class, provider}` in public meta
-(`platform/connection/src/registry/connections.lua:94-107`).
+(`platform/connection/src/registry/connections.lua`).
 
 ## Access
 
-Bitmask (`core/component/src/types.lua:52-63`), re-exported as
+Bitmask (`core/component/src/types.lua`), re-exported as
 `component.ACCESS.*`:
 
 - **`NONE`** — 0
@@ -271,7 +271,7 @@ Bitmask (`core/component/src/types.lua:52-63`), re-exported as
 - **`READ_WRITE`** — 3
 - **`FULL`** — 15
 
-Subject types: `user`, `group`, `service` (`core/component/src/types.lua:65-69`).
+Subject types: `user`, `group`, `service` (`core/component/src/types.lua`).
 
 Mask defaults: `READ` for view/list, `WRITE` for mutating component-owned data
 and for creating a child under a parent, `DELETE` to delete, `ADMIN` to share.
@@ -279,7 +279,7 @@ and for creating a child under a parent, `DELETE` to delete, `ADMIN` to share.
 The service provides for free:
 
 - On `register`, the creating actor gets a direct `FULL` grant and is recorded
-  as reserved `owner` meta (`core/component/src/persist/ops.lua:238-270`).
+  as reserved `owner` meta (`core/component/src/persist/ops.lua`).
 - Every write is gated by the service's access check; authors never write SQL
   permission checks.
 - Sharing is subtree-based: `grant_subtree`/`revoke_subtree` require ADMIN on
@@ -303,7 +303,7 @@ with the same `PERMISSION_DENIED` envelope.
 There is one delete cascade, shared by the gated request path
 (`delete_component`) and the trusted `component.system_delete` used by the
 lifecycle reaper; the only difference is the access gate
-(`core/component/src/persist/teardown.lua:1-6`). Order:
+(`core/component/src/persist/teardown.lua`). Order:
 
 1. `begin_delete` checks caller DELETE access and commits the `deleting_at`
    fence before cleanup; `system_delete` uses the same fence without the caller gate.
@@ -330,8 +330,9 @@ entry removes only the pointer.
 
 Do not create a parallel delete endpoint that bypasses component teardown. Order
 your own cascade so a yanked dependency cannot leave the component alive: KB
-delete tears down engine stores first and calls `svc:delete` last
-(`platform/knowledge/src/registry/knowledge_bases.lua:349-411`).
+delete verifies that every engine store contract opens, then calls `svc:delete`;
+store cleanup runs inside the component delete
+(`platform/knowledge/src/registry/knowledge_bases.lua`, `M.delete`).
 
 ## Autoinit Components
 
@@ -343,16 +344,16 @@ Requirements for a kind to be picked up:
 
 - The binding must carry both a `meta.provision` block and a `meta.class`
   array; miss either and the kind is silently skipped
-  (`core/component/src/autoinit.lua:233-257`).
+  (`core/component/src/autoinit.lua`).
 - `meta.class` is an array; the first element is the provisioned class.
 - `provision.scope` selects per-`user` or per-system instances;
   `provision.grants` adds grants beyond the owner's implicit FULL
-  (`core/component/src/autoinit.lua:91-99,167-183`).
+  (`core/component/src/autoinit.lua`).
 
 Ids are deterministic: `component_id(scope_key, class)` is an HMAC-SHA256
 (namespace `kickside.autoinit`), so `ensure` converges — safe to run on every
 login without duplicates. Same (actor, class) yields the same id, distinct per
-class and per actor (`core/component/test/src/autoinit_test.lua:64-69`).
+class and per actor (`core/component/test/src/autoinit_test.lua`).
 
 Keep the provision block declarative. Autoinit is a pure library; actual
 materialization lives in `kickside.core.threads:provision`. Runtime business
@@ -382,7 +383,8 @@ domain storage clear.
   and ancestor grants with group grants; the union must carry READ. Service
   subjects receive no realtime. Each group expands once per notification;
   there is no recipient cache, so revocation applies on the next event. An
-  unavailable realtime binding returns `{success=true, skipped=true}`. The
+  unavailable realtime binding returns `{success=true, status="not_supported",
+  notified=0, topic}`. The
   notification uses the caller's current frame. See
   `core/component/src/meta_service.lua` and
   `core/component/test/src/suites/notify_access_test.lua`.
@@ -394,13 +396,13 @@ domain storage clear.
   `component.emit_singleton_event(class, event)` resolves the owner from the
   ambient security frame; a missing actor is `PERMISSION_DENIED`, and a missing
   `event.type` or empty `class` is `INVALID`
-  (`core/component/src/component.lua:531-564`,
-  `core/component/test/src/emit_singleton_test.lua:82-110`). It emits onto the
+  (`core/component/src/component.lua`,
+  `core/component/test/src/emit_singleton_test.lua`). It emits onto the
   singleton's own thread.
 - **`errors` is a global.** The component client uses `errors.new` unqualified
-  without a `require` (`core/component/src/component.lua:25`). Follow that
+  without a `require` (`core/component/src/component.lua`). Follow that
   convention in component-adjacent code.
 - **Private context is immutable through some domain services.** A connection's
   `update` patches only public `title`; rotating auth is delete + register
-  (`platform/connection/src/registry/connections.lua:178-193`). Decide upfront
+  (`platform/connection/src/registry/connections.lua`). Decide upfront
   whether your kind allows `PATCH_CONTEXT` or forces recreate.

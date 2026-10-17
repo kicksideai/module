@@ -9,7 +9,7 @@ Security projects each distinct sorted group set into one named native group,
 `kickside.security.scopes:set_<sha256>`. Users with the same groups share that
 name. Login tokens, session startup, agent resolution, relay and MCP recover
 that named group. Policies retain native union and deny precedence. Membership
-changes revoke the user's sessions and select another set at the next login.
+reductions revoke the user's sessions; the next login selects the new set.
 Administrator and default-member sessions retain their declared group names.
 
 `app.security:user` supplies the signed-in baseline: the shell, sessions, own
@@ -134,7 +134,7 @@ at each execution boundary. Human sessions retain their credentials across
 allow-only membership additions and use live memberships; access reductions
 revoke them.
 
-The approved bot account capability uses ordinary `{kind="user", id=<UUID>}`
+Bot accounts use ordinary `{kind="user", id=<UUID>}`
 principals. Users owns immutable account classification, status, credential
 eligibility and memberships. Security owns native group-bound selection
 policies and their reduction fences. Execution constructs actors; Component
@@ -142,7 +142,7 @@ stores protected identity and audit; Automation admits and fences installed
 work. Bot memberships grant execution access, while operator memberships grant
 permission to select a bot. The creator supplies provenance rather than access.
 Bot creation requires exclusion at every KickSide authentication and credential
-boundary and the supported-install compatibility proofs. Keeper issues tokens
+boundary. Keeper issues tokens
 only to its authenticated calling administrator. The required invariant is that
 a bot never authenticates through KickSide, including when assigned the admin
 group, and therefore never becomes a Keeper caller. Bot accounts add no Keeper
@@ -235,7 +235,7 @@ Users also owns live credential readiness through
 credential boundary inventory with the optional `kickside.users:bot_account_consumers`
 requirement. Its empty default withholds new bot creation. Each row names required
 entry kinds and scalar metadata; an optional `installed` registry ID activates a
-row only when that module is present. Missing, legacy or mismatched boundaries
+row only when that module is present. Missing or mismatched boundaries
 withhold creation. Malformed inventories fail even for absent optional modules.
 The check requires the canonical Core-to-Users host binding and a readable marker
 schema, rereads current registry entries, preserves infrastructure errors, and
@@ -249,18 +249,17 @@ Users binds the native token store's `subject_lookup` to
 through the same live `credential_eligibility` check as the issuers, then uses
 Users' existing subject lookup for current groups and preserved session metadata.
 The execution subject lookup remains available to active bot principals; a
-background executor does not authenticate with a bearer. RA-H53 guards native
+background executor does not authenticate with a bearer. Admission guards cover native
 validation, header, query, cookie, Views and websocket upgrade-request ingress,
 including absent or forged actor metadata and lookup outages. Existing human
 tokens retain their stored bytes and current group resolution. The host readiness
 inventory names the session admission function and both authenticated routers.
-Keeper remains unchanged: a bot never authenticates as its calling admin.
+Keeper never authenticates a bot as its calling admin.
 
 Personal owner ceilings require a live restriction intersection. Organization
 ownership and tenant boundaries attach to Users metadata, group administration
-and resource ACLs. They do not introduce another principal kind. This release
-design excludes group execution, a separate service catalog, bot credentials,
-direct MCP impersonation and authority that survives authorizer deletion without
+and resource ACLs. They do not introduce another principal kind. KickSide has no group execution, separate service catalog, bot credentials,
+direct MCP impersonation, or authority that survives authorizer deletion without
 adoption. All product surfaces use the same protected owner admission path.
 
 ## Selected installation and identity commands
@@ -291,8 +290,8 @@ Every new identity-change command stores the server-captured operator identity.
 The deferred writer reads that immutable command, verifies its request/generation
 and preserves captured restrictions through the existing SET path. Writer
 arguments cannot supply authority or replacement restriction references. A replay
-with different restrictions conflicts. Previously pending commands without the
-optional capture keep their established behavior. The identity shape remains v2;
+with different restrictions conflicts. Commands without the optional capture
+keep their stored behavior. The identity shape remains v2;
 no bot executor or permission snapshot appears.
 
 A new selected-install command authorizes the proposed identity through Execution
@@ -347,8 +346,8 @@ An independent reviewer cannot restore a disabled executor or revoked selection
 grant. The existing resume boundary rechecks these before signaling the parked
 flow. Inbox preserves native callback errors through the existing HTTP classifier;
 a refused approval retains its pending decision and form for retry after authority
-is restored. Dataflow currently rebuilds frozen policy IDs for subsequent nodes;
-live group reduction during Await remains an upstream qualification failure.
+is restored. Known limitation: Dataflow rebuilds frozen policy IDs for subsequent nodes, so
+a live group reduction during an Await does not reach those nodes.
 
 A selected executor needs its own live group WRITE access to the protected Automation
 root and declared resources. Permission to select that account does not grant
@@ -419,7 +418,7 @@ Modules that use this shared member interface declare
 `meta.member_scope: kickside.contract.http:user_security_scope` on their owned
 module policy. The existing requirement binds a group-composition declaration
 that selects these contributors and expands their existing policy includes.
-Its default remains platform Members; an explicit historical binding keeps its
+Its default remains platform Members; an explicit existing binding keeps its
 supplied group. Contract's own endpoint policy stays bounded to Core. Modules
 without this metadata keep their existing scope requirements and composition.
 The shared declaration retains scalar `group_id` as platform Members. A projector
@@ -554,7 +553,7 @@ confirmed success; retries reuse the admitted request UUID until the choice
 changes. Responses from a previous root cannot update the current editor.
 Future domain screens reuse this editor for installed roots. New installation
 surfaces select through the Users picker and the prepared install capability;
-they do not create another identity setter or change legacy installation.
+they do not create another identity setter or change existing installation.
 
 Automation's private identity-apply boundary retains the authenticated operator
 while granting the native actor/group/scope evaluation capabilities needed by

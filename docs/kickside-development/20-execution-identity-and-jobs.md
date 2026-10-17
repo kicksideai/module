@@ -45,10 +45,10 @@ application code.
 ## Schedule a durable job
 
 `kickside.core.jobs:jobs` owns leased jobs and exact deadlines. The public
-`enqueue` input uses `namespace`, `scope`, `key`, `job_type` (the worker entry
-ID), and `immutable_payload`. Optional fields in `core/jobs/src/jobs.lua`
-include `scheduled_at`, `slot`, `wake_key`, `parked`, `owner_locator`,
-`thread_id`, `trace_context`, `priority`, `max_attempts`, and
+`enqueue` input requires `namespace`, `scope`, `key`, `owner_locator =
+{kind, id}`, `job_type` (the worker entry ID), and an `immutable_payload`
+table. Optional fields in `core/jobs/src/jobs.lua` include `scheduled_at`,
+`slot`, `wake_key`, `parked`, `thread_id`, `trace_context`, `priority`, `max_attempts`, and
 `concurrency_key`. For example, a domain owner can enqueue a single deadline:
 
 ```lua

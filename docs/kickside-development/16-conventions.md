@@ -128,7 +128,7 @@ owned by the module; a host-owned resource ID is supplied by requirement.
 private component context, encrypted OAuth storage, or host runtime storage,
 never in setting defaults or public meta.
 
-An `env.variable` can expose an operator value. In the release uploads module,
+An `env.variable` can expose an operator value. In `kickside/uploads`,
 `kickside.uploads.env:database_resource` declares `variable:
 KICKSIDE_UPLOADS_DATABASE_RESOURCE` and `meta.private: true`; the
 `database_resource` requirement rewrites its `.default` target. The source

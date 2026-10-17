@@ -6,7 +6,7 @@ DB-discovered catalog records resolved through classes. Traits and tools are the
 registry surface any module uses to extend agents.
 
 File citations in backticks (for example
-`platform/agents/src/agent_resolver.lua:205-209`) are monorepo-relative source
+`platform/agents/src/agent_resolver.lua`) are kicksideai/kickside repository paths for source
 grounding. The page stands alone; the citations tell you where each rule is
 pinned.
 
@@ -23,13 +23,13 @@ A trait (a "capability" in the UI) is one `registry.entry` with
 `meta.type: agent.trait`: a static prompt fragment, optional prompt/build
 functions, and member tools. The agents module discovers traits purely through
 the registry; a contributing module has no code coupling back to
-`kickside.agents` (`platform/inbox/src/traits/_index.yaml:9`).
+`kickside.agents` (`platform/inbox/src/traits/_index.yaml`).
 
 Modules ship traits under `platform/<module>/src/traits/` with an `_index.yaml`
 whose namespace is `kickside.<module>.traits`. Sub-families nest with their own
 `_index.yaml` (`platform/knowledge/src/traits/kb_ingest/`).
 
-Trait entry fields (`platform/knowledge/src/traits/_index.yaml:10-54`):
+Trait entry fields (`platform/knowledge/src/traits/_index.yaml`):
 
 - **`meta.type: agent.trait`** — Required; makes the agents module pick the entry up
 - **`meta.title` / `icon` / `comment` / `tags`** — Picker metadata
@@ -43,7 +43,7 @@ Trait entry fields (`platform/knowledge/src/traits/_index.yaml:10-54`):
 - **`tools`** — Member-tool registry ids the trait activates
 
 A static trait needs only `prompt` + `tools`. Complete example
-(`platform/inbox/src/traits/_index.yaml:12-79`):
+(`platform/inbox/src/traits/_index.yaml`):
 
 ```yaml
   - name: inbox_submit
@@ -64,16 +64,16 @@ A static trait needs only `prompt` + `tools`. Complete example
 A configured trait declares `context_schema` + `web_component`; the agent
 editor writes chosen values into the agent's `trait_contexts[<trait_id>]`, and
 the resolver validates that map against each schema before launch
-(`platform/agents/src/agent_resolver.lua:211-243`). Trait config UI is the
+(`platform/agents/src/agent_resolver.lua`). Trait config UI is the
 declared web component, never code inside the agent editor.
 
 The function hooks are ordinary `function.lua` entries with `method: execute`:
 `init_skills` (build) folds `context.skill_ids` into the prompt at compile
-(`platform/skills/src/traits/_index.yaml:17-27`); `active_skills` (prompt) runs
+(`platform/skills/src/traits/_index.yaml`); `active_skills` (prompt) runs
 each step (same file, lines 28-37).
 
 Runtime activation: `trait_curator`/`trait_master`
-(`platform/agents/src/traits/_index.yaml:222-372`) let an agent toggle other
+(`platform/agents/src/traits/_index.yaml`) let an agent toggle other
 traits mid-session by emitting a `_control.config.traits` directive that
 recompiles the session.
 
@@ -81,7 +81,7 @@ recompiles the session.
 
 A tool is a `function.lua` entry with `meta.type: tool` — the only registry
 kind an LLM calls directly. Complete example
-(`platform/inbox/src/traits/_index.yaml:30-78`):
+(`platform/inbox/src/traits/_index.yaml`):
 
 ```yaml
   - name: inbox_submit_tool
@@ -151,11 +151,11 @@ the persistence module.
 ### Binding paths
 
 Two independent paths put a tool on an agent
-(`platform/agents/src/agent_resolver.lua:221-271`):
+(`platform/agents/src/agent_resolver.lua`):
 
 1. Via a trait: the trait's `tools:` list. A trait can wildcard a whole
    namespace — File Manager binds `kickside.uploads.traits:*`
-   (`platform/uploads/src/traits/_index.yaml:72`).
+   (`platform/uploads/src/traits/_index.yaml`).
 2. Directly on the agent: the persisted `tools: [...]` array in private
    context, copied verbatim into the tool list.
 
@@ -164,7 +164,7 @@ Two independent paths put a tool on an agent
 The compiler binds `trait_contexts` values onto the tool's execution ctx; the
 tool reads them with `ctx.get("kb_ids")`. The positional `context` parameter is
 the unit-test injection seam only
-(`platform/knowledge/src/traits/kb_query.lua:49-57`). A tool that reads config
+(`platform/knowledge/src/traits/kb_query.lua`). A tool that reads config
 from its args gets nils at runtime.
 
 ### Return conventions
@@ -285,7 +285,7 @@ there is no separate skills/versions/files SQL schema. Refinement appends a new
 immutable version through the same writer. See `platform/skills/src/README.md`.
 
 Store dispatchers are per-method `function.lua` entries
-(`platform/skills/src/_index.yaml:323-419`): commands (`skill_create`,
+(`platform/skills/src/_index.yaml`): commands (`skill_create`,
 `skill_refine`, `skill_delete`, `skill_share`) route to `persist/writer.lua`;
 queries (`skill_get`, `skill_list`, `skill_list_files`, `skill_read_file`,
 `skill_list_versions`) to `persist/reader.lua`. Each runs under the caller's
@@ -301,7 +301,7 @@ The agent surface (`platform/skills/src/traits/_index.yaml`):
 - `Skill` tool: actions `list`/`use`/`activate`/`deactivate`/`save`/`refine`/
   `delete`/`share`/`unshare`. The handler maps each action to a store
   dispatcher via `funcs.call("kickside.skills:" .. fn, parsed_args)`
-  (`platform/skills/src/traits/skill_tool.lua:122`), carrying the caller's
+  (`platform/skills/src/traits/skill_tool.lua`), carrying the caller's
   actor. `activate`/`deactivate` mutate the session's `active_skills` set with
   a `_control` directive, not the store.
 - `SkillFile` tool: reads bundled files on demand by `skill_id` + `path`.
@@ -326,7 +326,7 @@ User-created agents are Components. Built-in agents use registry declarations. C
   - **Role:** Read-only tool discovery: find/list
 - **`kickside.agents:user_agent`**
   - **Kind:** `contract.binding`
-  - **Role:** The kind backing every user agent; its id is the `impl_id` discriminator (`platform/agents/src/types.lua:13`); component class `agent`; binds `kickside.contract:component`, `kickside.contract:deletable`, `kickside.data:writable`
+  - **Role:** The kind backing every user agent; its id is the `impl_id` discriminator (`platform/agents/src/types.lua`); component class `agent`; binds `kickside.contract:component`, `kickside.contract:deletable`, `kickside.data:writable`
 - **`kickside.agents:agent_resolver`**
   - **Kind:** `contract.binding`
   - **Role:** Binds `wippy.agent:resolver` (`default: true`)
@@ -342,7 +342,7 @@ retains its acting user while traits and tools compile. The resolver accepts
 closed when its configured model or trait context is invalid.
 
 Agent config persists in the component's private context as `AgentConfig`
-(`platform/agents/src/types.lua:54-68`): `prompt`, `model`, `temperature`,
+(`platform/agents/src/types.lua`): `prompt`, `model`, `temperature`,
 `max_tokens`, `thinking_effort`, `traits`, `trait_contexts`,
 `trait_agent_options`, `agent_options`, `tools`, `delegates`,
 `memory_target_id`, `memory_provider_id`. Rendered fields
@@ -375,9 +375,9 @@ memory storage.
 
 An agent's `model` is a concrete model name or a class reference
 `class:<name>`; the create-time default is `class:fast`
-(`platform/agents/src/types.lua:40`). The resolver fails closed when `model`
+(`platform/agents/src/types.lua`). The resolver fails closed when `model`
 is missing rather than substituting a default
-(`platform/agents/src/agent_resolver.lua:205-209`).
+(`platform/agents/src/agent_resolver.lua`).
 
 Model classes are `registry.entry` with
 `meta.type: kickside.models:model_class`
@@ -400,7 +400,7 @@ Provider profiles are DB-backed (`llm.provider`, encrypted secrets), holding
 endpoint/auth/config; model cards hold call defaults and classes.
 `kickside.models:model_resolver` binds `wippy.llm:model_resolver`
 (`default: true`) so `llm.generate/structured_output/embed/status` resolve DB
-model cards before registry defaults (`platform/models/src/_index.yaml:143-158`).
+model cards before registry defaults (`platform/models/src/_index.yaml`).
 
 Adding a provider: one adapter in `platform/models/src/discovery/providers/`,
 registered in the discovery registry, published in the discovery
@@ -420,7 +420,7 @@ map. Do not treat a prompt-provided component ID as authorization: call
 owner stores a selected execution identity and resolves live authority at
 execution; see [Execution Identity And Deadline Jobs](20-execution-identity-and-jobs.md).
 
-Actor guard inside a tool (`platform/inbox/src/traits/inbox_submit.lua:28-31`):
+Actor guard inside a tool (`platform/inbox/src/traits/inbox_submit.lua`):
 
 ```lua
     local actor = security.actor()
@@ -447,18 +447,18 @@ is the host router's job; per-resource access is the component service's job.
 
 1. An empty system prompt is substituted with "You are a helpful AI
    assistant." because the Claude provider rejects empty text blocks tagged
-   for prompt caching (`platform/agents/src/agent_resolver.lua:305-309`). The
+   for prompt caching (`platform/agents/src/agent_resolver.lua`). The
    missing-model case, by contrast, fails closed.
 2. Dangling delegates are dropped, not errored: when a delegate's target agent
    is deleted, the resolver omits it from both the tool list and the delegate
    prompt. Delegate tool names are slugged to `^[a-zA-Z0-9_-]+$` with
-   collision suffixes (`agent_resolver.lua:281-290, 112-122`).
+   collision suffixes (`agent_resolver.lua`).
 3. Some traits are hidden or auto-attached: `redirect` is assignable but
    hidden from the Capabilities picker (configured via a dedicated tab);
    `delegate` is `meta.private: true`. A picker listing `agent.trait` entries
    must honor `public`/`private`
-   (`platform/agents/src/traits/_index.yaml:24-77`).
+   (`platform/agents/src/traits/_index.yaml`).
 4. Master traits recompile the session mid-turn via `_control` directives
    (`config.traits`, `context.session.set`); the resolver seeds
    `base_traits`/`self_id` so activation never drops the agent's own traits
-   and does not leak across a redirect (`agent_resolver.lua:246-264`).
+   and does not leak across a redirect (`agent_resolver.lua`).

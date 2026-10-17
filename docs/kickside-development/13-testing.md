@@ -30,7 +30,7 @@ return { run = function(options) return run_cases(options) end }
 
 The test entry also declares `modules: [registry]`. Merely defining a
 `test.describe` tree does not execute its assertions. Check the runner's case
-count, and fail on `No tests found`; the template's Makefile does both.
+count, and fail on `No tests found`; the template's Makefile fails on `No tests found`.
 Register behavior tests for the sink or handler, wiring tests for exact IDs
 and references, and actor-scoped tests for denied and allowed paths. For
 event/projection code, test repeated delivery, source gaps, component WRITE output authorization,

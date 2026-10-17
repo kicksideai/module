@@ -4,7 +4,7 @@ This handbook is the canonical development map for building KickSide modules:
 components, contracts, integrations, web components, automations, knowledge
 engines, uploads, inbox flows, agents, skills, and app surfaces.
 
-KickSide is assembled from independently published Wippy modules. This wiki is
+KickSide is assembled from independently published Wippy modules. This handbook is
 the standalone authoring handbook for those modules; frontend source-of-truth
 directives live in [frontend/](frontend/frontend-handbook.md). It pairs with the
 executable
@@ -116,9 +116,9 @@ the authorization surfaces every module declares and tests.
 
 ## Source Map
 
-The handbook is grounded in these KickSide monorepo surfaces (paths relative to
-the monorepo root; useful when working with a full checkout, not required for
-authoring from this repo):
+The handbook is grounded in these kicksideai/kickside repository surfaces
+(paths relative to the repository root; useful with a full checkout, not
+required for authoring a module):
 
 - **Core modules** — `core/README.md`
 - **Component service** — `core/component/src/_index.yaml`, `core/component/src/component.lua`, `core/component/src/meta_service.lua`
@@ -138,8 +138,7 @@ authoring from this repo):
 
 Provider and business modules published from other repositories are discovered
 from the Hub. Use [Discovery, Addressing, And Context](19-discovery-addressing-and-context.md)
-and inspect their published entries; do not infer their current source layout
-from a historical monorepo path.
+and inspect their published entries; do not infer their source layout.
 
 ## Rules
 
