@@ -26,7 +26,8 @@ class PublicationTest(unittest.TestCase):
         ])
 
     def test_real_publish_requires_token(self):
-        with patch.dict(os.environ, {}, clear=True):
+        with patch.dict(os.environ, {}, clear=True), \
+                patch.object(DELIVERY, 'initialization', return_value=self.initialization()):
             with self.assertRaisesRegex(ValueError, 'WIPPY_TOKEN'):
                 DELIVERY.publish_command(self.module(), '0.2.1', False)
 
@@ -35,11 +36,25 @@ class PublicationTest(unittest.TestCase):
             with self.subTest(version=version), self.assertRaises(ValueError):
                 DELIVERY.publish_command(self.module(), version, True)
 
-    def test_placeholder_identity_cannot_publish(self):
-        with self.assertRaisesRegex(ValueError, 'placeholder'):
-            DELIVERY.validate_identity(self.module() | {
-                'organization': 'acme', 'module': 'starter',
-            })
+    def initialization(self, initialized=True, organization='orbit', module='tasks'):
+        return {
+            'initialized': initialized,
+            'identity': {'organization': organization, 'module': module},
+        }
+
+    def test_uninitialized_module_cannot_publish_for_any_identity(self):
+        with self.assertRaisesRegex(ValueError, 'initialize'):
+            DELIVERY.validate_identity(
+                self.module(), self.initialization(initialized=False))
+
+    def test_initialized_module_with_matching_identity_can_publish(self):
+        DELIVERY.validate_identity(
+            self.module(), self.initialization(organization='orbit', module='tasks'))
+
+    def test_initialized_module_rejects_mismatched_release_metadata(self):
+        with self.assertRaisesRegex(ValueError, 'identity'):
+            DELIVERY.validate_identity(
+                self.module(), self.initialization(organization='another', module='tasks'))
 
     def test_only_declared_module_path_can_publish(self):
         self.assertEqual(DELIVERY.released_module('.')['path'], '.')

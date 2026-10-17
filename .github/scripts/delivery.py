@@ -20,18 +20,28 @@ def released_module(path):
     return modules[path]
 
 
-def validate_identity(module):
-    if module.get('organization') == 'acme' and module.get('module') == 'starter':
-        raise ValueError('initialize the template before publishing its placeholder identity')
+def initialization():
+    return json.loads((ROOT / '.kickside-module.json').read_text())
+
+
+def validate_identity(module, state):
+    identity = state.get('identity')
+    if state.get('initialized') is not True:
+        raise ValueError('initialize the template before publishing')
+    if not isinstance(identity, dict):
+        raise ValueError('initialized template has no release identity')
+    for field in ('organization', 'module'):
+        if identity.get(field) != module.get(field):
+            raise ValueError('release metadata does not match the initialized identity')
 
 
 def publish_command(module, version, dry_run):
     if not re.fullmatch(r'\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?', version):
         raise ValueError('an explicit release version is required')
-    if not dry_run and not os.environ.get('WIPPY_TOKEN'):
-        raise ValueError('WIPPY_TOKEN is required for publication')
     if not dry_run:
-        validate_identity(module)
+        validate_identity(module, initialization())
+        if not os.environ.get('WIPPY_TOKEN'):
+            raise ValueError('WIPPY_TOKEN is required for publication')
     args = [
         'wippy', 'publish', '--config', module['path'], '--version', version,
         '--create', '--module-visibility', module['visibility'],
