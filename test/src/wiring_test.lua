@@ -12,6 +12,9 @@ local NAV_ID = "acme.starter:nav_item"
 local STATIC_ID = "acme.starter:ui_static"
 local FS_ID = "acme.starter:ui_fs"
 local POLICY_ID = "acme.starter.security:starter_endpoint_access"
+local MODULE_ACCESS_ID = "acme.starter.security:module_access"
+local RUNTIME_ID = "acme.starter.security:module_runtime"
+local SCOPE_ID = "acme.starter.security:user_security_scope"
 local BLOCK_ID = "acme.starter.blocks:block.write_log"
 local BLOCK_FN_ID = "acme.starter.blocks:block_write_log"
 
@@ -31,6 +34,16 @@ end
 local function data_of(entry)
     if type(entry.data) == "table" then return entry.data end
     return entry
+end
+
+local function resources_of(entry)
+    local policy = data_of(entry).policy
+    test.not_nil(policy, "policy entry must declare a policy")
+    local resources = policy.resources
+    if type(resources) == "string" then resources = { resources } end
+    local set = {}
+    for _, resource in ipairs(resources or {}) do set[resource] = true end
+    return set
 end
 
 -- Entry references are written relative or namespace-qualified; compare fully
@@ -88,16 +101,43 @@ local function define_tests()
             get(BLOCK_FN_ID)
         end)
 
-        test.it("gates the api namespace behind the injectable access policy", function()
-            local policy = data_of(get(POLICY_ID))
-            local resources = policy.policy and policy.policy.resources
-            test.not_nil(resources, "policy must list resources")
-            if type(resources) == "string" then resources = { resources } end
-            local covered = false
-            for _, r in ipairs(resources) do
-                if r == "acme.starter.api:*" then covered = true end
+        test.it("publishes a selectable module access policy over exact entry IDs", function()
+            local module_access = get(MODULE_ACCESS_ID)
+            local meta = meta_of(module_access)
+            test.eq(meta.intent, "module_access")
+            test.not_nil(meta.title, "module access policy needs a title")
+            test.eq(meta.surface, NS)
+            test.is_nil(meta.private)
+            test.eq(resources_of(module_access)[ENDPOINT_ID], true)
+
+            local includes = {}
+            for _, id in ipairs(meta.includes or {}) do includes[id] = true end
+            test.eq(includes[RUNTIME_ID], true)
+            test.eq(includes[POLICY_ID], true)
+            test.eq(meta_of(get(RUNTIME_ID)).private, true)
+
+            local surface = resources_of(get(POLICY_ID))
+            test.eq(surface[VIEW_ID], true)
+            test.eq(surface[STATIC_ID], true)
+
+            for _, id in ipairs({ MODULE_ACCESS_ID, POLICY_ID }) do
+                for resource in pairs(resources_of(get(id))) do
+                    test.is_nil(resource:find("*", 1, true), id .. " grants a pattern: " .. resource)
+                end
             end
-            test.is_true(covered, "policy must cover acme.starter.api:*")
+        end)
+
+        test.it("binds every policy to the member security scope requirement", function()
+            local requirement = get(SCOPE_ID)
+            test.eq(meta_of(requirement).value_kind, "security.scope")
+            local targeted = {}
+            for _, target in ipairs(data_of(requirement).targets or {}) do
+                test.eq(target.path, ".groups +=")
+                targeted[target.entry] = true
+            end
+            for _, id in ipairs({ MODULE_ACCESS_ID, RUNTIME_ID, POLICY_ID }) do
+                test.eq(targeted[id], true, id .. " is not bound to the member scope")
+            end
         end)
     end)
 end
