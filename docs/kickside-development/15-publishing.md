@@ -36,13 +36,20 @@ checks, initializer test, Wippy lint, frontend typecheck/build, and SQLite
 suites. For SQL changes also run `make postgres-up`, `make test-pg`, and
 `make postgres-down`. Inspect the emitted `static/index.js` and registry
 `view.component.entry_point`. `make release-check` runs the gates and an
-authenticated publish dry run; `make publish` then publishes. Both use the
-version in `.release-please-manifest.json` unless `VERSION` is set. Use the
-module's checked-in Makefile for its exact targets; never call package-manager
-or Vite build commands directly in a Wippy repository. Authenticate with
+authenticated publish dry run using the version in
+`.release-please-manifest.json` unless `VERSION` is set. Authenticate with
 `wippy auth login` and check `wippy auth status` before the release check.
-Publish dependencies first so Hub can resolve the module's graph. A release
-cannot be edited after publication; publish a new version for changes.
+
+The template's public `.github/workflows/release.yml` owns publication.
+After a code PR merges, Release Please proposes a release PR. Review its
+version, changelog, and CI results, then merge that release PR to create the
+tag and publish its version to the Hub. Normal code merges do not publish.
+`make publish` points to this workflow. Configure the workflow's required
+GitHub and Hub credentials before releasing. Use the module's checked-in
+Makefile for its exact targets; never call package-manager or Vite build
+commands directly in a Wippy repository. Publish dependencies first so Hub
+can resolve the module's graph. A release cannot be edited after publication;
+publish a new version for changes.
 
 ## Install and update through KickSide Hub
 
