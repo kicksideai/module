@@ -25,7 +25,7 @@ make test-pg
 make postgres-down
 ```
 
-`make release-check` runs every gate and a publish dry run; `make publish` publishes. Both use the version in `.release-please-manifest.json` unless `VERSION=x.y.z` is set, and require `wippy auth login`.
+`make release-check` runs every gate and a publish dry run. Releases go through the GitHub Release Please workflow, which opens a reviewed release proposal and publishes only after it merges.
 
 The [Makefile](Makefile) owns the commands. The bundled [developer handbook](docs/README.md) is an exact copy of the canonical handbook shipped by KickSide; `make sync-handbook` updates it and `make check-handbook` detects drift. See the [module authoring guide](https://github.com/kicksideai/docs/blob/main/building-modules/index.md) for contracts, requirements, and application integration.
 

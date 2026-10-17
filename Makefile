@@ -20,6 +20,10 @@ setup:
 check:
 	node scripts/check-module.mjs
 	node scripts/test-initializer.mjs
+	node .github/scripts/test_release_workflow.mjs
+	python3 -B .github/scripts/test_delivery.py
+	python3 -B .github/scripts/test_release_baseline.py
+	node .github/scripts/test_release_dry_run.cjs
 build:
 	npm --prefix ui run build
 dev:
@@ -47,5 +51,6 @@ verify: setup check lint typecheck build test
 release-check: verify
 	wippy auth status
 	wippy publish --version "$(VERSION)" --dry-run --create --module-visibility $(VIS) --module-type $(TYPE) $(EMBED)
-publish: release-check
-	wippy publish --version "$(VERSION)" --create --module-visibility $(VIS) --module-type $(TYPE) $(EMBED)
+publish: build
+	@echo "Releases use GitHub Release Please (.github/workflows/release.yml)." >&2
+	@exit 1

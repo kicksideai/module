@@ -1,0 +1,148 @@
+name: Release
+'on':
+  push:
+    branches:
+    - main
+    - ci-bootstrap
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Verify release proposals and packages without publishing
+        type: boolean
+        default: true
+        required: true
+permissions: {}
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  checks:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+    if: ${{ github.ref != 'refs/heads/ci-bootstrap' }}
+  dry-run:
+    if: ${{ always() && (github.ref == 'refs/heads/ci-bootstrap' || (github.event_name == 'workflow_dispatch' && inputs.dry_run
+      && needs.checks.result == 'success')) }}
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - &id001
+      name: Create temporary workspace
+      run: 'mkdir -p "$RUNNER_TEMP/kickside-ci"
+
+        echo "TMPDIR=$RUNNER_TEMP/kickside-ci" >> "$GITHUB_ENV"'
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      with:
+        node-version: '22'
+    - name: Resolve snapshot release baseline
+      run: python3 .github/scripts/prepare_release_baseline.py
+    - name: Release Please dry run
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: 'set -euo pipefail
+
+        npm install --prefix "$RUNNER_TEMP/release-please" --no-save release-please
+
+        NODE_PATH="$RUNNER_TEMP/release-please/node_modules" node .github/scripts/release_dry_run.cjs'
+  release:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.identity.outputs.initialized == 'true'
+      }}
+    needs:
+    - checks
+    - identity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      paths_released: ${{ steps.release.outputs.paths_released }}
+      release_outputs: ${{ toJSON(steps.release.outputs) }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - name: Resolve snapshot release baseline
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 .github/scripts/prepare_release_baseline.py --persist
+    - name: Release Please
+      id: release
+      uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
+      with:
+        token: ${{ github.token }}
+        config-file: release-please-config.json
+        manifest-file: .release-please-manifest.json
+    - name: Verify release PRs
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RELEASE_PRS: ${{ steps.release.outputs.prs }}
+      run: 'set -euo pipefail
+
+        python3 .github/scripts/dispatch_release_ci.py'
+  publish:
+    if: ${{ needs.release.outputs.releases_created == 'true' }}
+    needs: release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        path: ${{ fromJSON(needs.release.outputs.paths_released) }}
+    env:
+      MODULE_PATH: ${{ matrix.path }}
+      RELEASE_VERSION: ${{ fromJSON(needs.release.outputs.release_outputs)[matrix.path == '.' && 'version' || format('{0}--version',
+        matrix.path)] }}
+      RELEASE_TAG: ${{ fromJSON(needs.release.outputs.release_outputs)[matrix.path == '.' && 'tag_name' || format('{0}--tag_name',
+        matrix.path)] }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+        ref: ${{ env.RELEASE_TAG }}
+    - *id001
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      with:
+        node-version: '22'
+    - name: Install Python gate dependencies
+      run: python3 -m pip install PyYAML
+    - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
+      with:
+        version: 0.3.47a
+        hub-url: https://hub.wippy.ai
+    - name: Verify release PR CI
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python3 .github/scripts/verify_release_pr.py
+    - name: Publish the released module
+      env:
+        WIPPY_TOKEN: ${{ secrets.WIPPY_TOKEN }}
+      run: python3 .github/scripts/delivery.py publish --module "$MODULE_PATH" --version "$RELEASE_VERSION"
+  identity:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      initialized: ${{ steps.identity.outputs.initialized }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - id: identity
+      run: node -e 'console.log("initialized=" + JSON.parse(require("fs").readFileSync(".kickside-module.json")).initialized)'
+        >> "$GITHUB_OUTPUT"
