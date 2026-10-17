@@ -47,8 +47,8 @@ another user's records. Direct record grants cascade through the whole subtree;
 removing module authority also hides its implementations through generic
 component reads. Access reductions invalidate affected user sessions: removed
 allow policies, added denies, removed memberships and deleted groups. Allow-only
-expansions leave existing sessions valid and grant added authority through their
-live memberships. A module install
+expansions leave existing sessions valid. New tokens resolve updated authority;
+durable credentials retain their issuance ceiling and revocation generations. A module install
 therefore never signs a member out. An unchanged boot or metadata edit writes no policy
 composition and leaves sessions valid.
 

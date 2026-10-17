@@ -36,8 +36,8 @@ and inherited grants; WRITE does not require READ. Outputs marked `system_only:
 true` require the trusted framework maintenance path. Input events use the `user`
 role and the caller's external identity. Ordinary callers cannot set `created_at`
 or append reserved framework events. Every target in a batch is authorized before
-insertion, and a denied target rolls back the batch. The generic
-`kickside.threads:message.created` input belongs to plain Threads.
+insertion, and a denied target rolls back the batch. Plain Threads accept the
+input events declared by their stored kind.
 
 `kickside.core:threads` is the public contract. `emit` ensures the thread at
 the component ID and appends its event; `append_event` and `append_events`
@@ -125,8 +125,8 @@ but a returned `meta` field does not update component public metadata.
 
 For UI badges and status, call `component.set_meta(thread_id, fields)` from
 the projection. `platform/inbox/src/persist/projection.lua` is the working
-fold and public-meta example; `crm-port/src/projection.lua` shows a larger
-normalized read model. The worker runs under its stored, live-resolved
+fold and public-meta example; [CRM's projection](https://github.com/kicksideai/crm/tree/main/src/persist)
+shows a normalized read model. The worker runs under its stored, live-resolved
 execution identity. Do not synthesize an actor or scope in the worker.
 
 A durable writer that needs projection acknowledgment can call

@@ -47,7 +47,10 @@ migration, security, contract, and test runner. The module dependency's
 server, and security group. The module stays app-agnostic and declares no
 host-owned default. `test/.wippy.yaml` uses `workspace.replacements` to load
 the local module, and a PostgreSQL profile overrides `app:db` for the second
-engine. Harness files stay under `test/` and are excluded from the published
+engine. Resolve dependencies fresh before verification: the template uses
+`make setup`; other modules expose `make lockrefresh`. Local sibling modules
+use workspace replacements; other dependencies resolve current Hub versions.
+Harness files stay under `test/` and are excluded from the published
 module tree.
 
 The SQLite resource must declare `foreign_keys: true`. The harness can set

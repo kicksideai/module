@@ -1,9 +1,8 @@
 # Frontend And Web Components
 
 KickSide frontend pages are source-of-truth directives, not local copies of
-Wippy implementation guidance. Before frontend work, query the
-`wippy.frontend` knowledge base through MCP for the surface being changed and
-check drift-sensitive details against the current official pages:
+Wippy implementation guidance. Before frontend work, read the current official
+guidance for the surface being changed:
 
 - [Wippy documentation index](https://wippy.ai/llms.txt)
 - [Frontend compliance checklist](https://wippy.ai/llm/path/en/frontend/micro-frontends/compliance-checklist)

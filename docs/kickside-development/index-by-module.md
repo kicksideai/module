@@ -9,10 +9,13 @@
   - **Role:** component/access/public-meta backbone
   - **Read:** [Component Development](01-component-development.md)
 - **`core/core`**
-  - **Role:** threads, events, projections, jobs, trace
+  - **Role:** threads, events, projections, retention, and lifecycle
   - **Read:** [Threads, Events, And Projections](03-threads-events-projections.md)
+- **`core/execution`**
+  - **Role:** execution identity, delegation, and trace context
+  - **Read:** [Execution Identity And Deadline Jobs](20-execution-identity-and-jobs.md)
 - **`core/jobs`**
-  - **Role:** finite deferred work and effect intents
+  - **Role:** leased jobs, deadlines, retries, and wake demand
   - **Read:** [Threads, Events, And Projections](03-threads-events-projections.md)
 
 ## Platform
@@ -104,9 +107,6 @@
 - **`platform/self-reflection`**
   - **Role:** bounded registry reflection and namespace inspection
   - **Read:** [Discovery, Addressing, And Context](19-discovery-addressing-and-context.md)
-- **`platform/orders`, `platform/pim`**
-  - **Role:** example business modules using module-owned records and app surfaces
-  - **Read:** [Application Patterns](10-application-patterns.md)
 
 ## Modules Published Elsewhere
 

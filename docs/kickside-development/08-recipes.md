@@ -6,7 +6,7 @@ instead of creating feature-specific frameworks.
 ## New Component Kind
 
 1. Pick the owning module.
-2. Add a `contract.binding` or registry entry for the kind.
+2. Add a `contract.binding` implementing `kickside.contract:component`.
 3. Define public meta fields and private context fields.
 4. Register through `kickside.component`.
 5. Add access checks through component service.
@@ -23,7 +23,7 @@ instead of creating feature-specific frameworks.
 4. Put credentials in connection private context or OAuth storage.
 5. Normalize discovered resources.
 6. Register provider UI as `view.component` when needed.
-7. Add provider traits/tools as registry entries.
+7. Add `agent.trait` registry entries and `function.lua` tools with schemas.
 8. Test create, validate, discover, reply, and delete.
 
 ## New KB Engine
@@ -51,13 +51,13 @@ instead of creating feature-specific frameworks.
 
 ## Human Approval Flow
 
-1. Begin a trace with `trace_context`.
-2. Append domain request event.
-3. Write an inbox item through `kickside.inbox.sink:inbox_sink`.
-4. Store correlation in the item/event, not in UI state.
-5. Wait for approved/rejected event by `run_id + type + correlation_key`.
-6. Continue through a projection/job.
-7. Update component public meta through the state owner.
+1. Compose `kickside.inbox:block.review` in a Flow.
+2. Configure the reviewer assignment and decision input.
+3. Let Blocks/Dataflow commit the durable park and arm the Inbox item.
+4. Submit the decision through Inbox’s action interface.
+5. Resume using the Flow ID and native signal ID under its saved executor.
+6. Inspect the resumed Flow’s terminal state separately from decision acceptance.
+7. Test a nested wait across restart and denied reviewer or executor access.
 
 ## Event-Driven Automation
 

@@ -111,7 +111,9 @@ base library; the transport does the provider-specific work.
   is both the UI form spec and the server-side allowlist
   (`platform/connection/src/api/create_policy.lua`).
 - Providers read credentials through the actor-validated component service,
-  normally `component.get_private_context(component_id)`. There is no registry
+  through `component.open(component_id, component.ACCESS.READ, contract_id)`
+  or `component.read_context(component_id, required_access)`. Trusted private
+  readers are reserved for framework-owned work. There is no registry
   or raw-SQL fallback for credential lookup.
 - Optional live validation: when `body.validate` is true, create opens the new
   component with write access and calls `test_connection`; failure deletes the
@@ -204,8 +206,8 @@ same Connections registry.
 ### Adding An OAuth Provider Is One Registry Entry
 
 The provider declares one `registry.entry` with `meta.oauth_provider`,
-discovered by the OAuth registry. The following is the complete declaration
-shape; use Hub discovery for a provider's current endpoints and scopes:
+discovered by the OAuth registry. The following is an illustrative descriptor
+shape with abbreviated scopes; use Hub discovery for a provider's current endpoints and scopes:
 
 ```yaml
 - name: google
@@ -272,8 +274,9 @@ A shared/admin-owned connection can host per-user responders. The channel owner 
 
 ## Source Syncs
 
-Source sync belongs to the component/automation that owns the source. Store
-watermarks in the owning private state, and emit durable events into threads.
+Source sync belongs to its Automation. The drive owns its committed source
+cursor and the shared engine owns scheduling and delivery. Provider source
+ports supply payloads and source versions; a connection owns credentials.
 Do not add source-specific columns to core event tables unless the query is
 actually generic.
 

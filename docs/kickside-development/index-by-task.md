@@ -28,16 +28,16 @@
   - **Use:** private context or OAuth storage
   - **Avoid:** public meta
 - **Add a workflow wait**
-  - **Use:** thread event + trace context
+  - **Use:** declared wait Block + native Flow signal
   - **Avoid:** polling random tables
 - **Add a human approval**
-  - **Use:** inbox sink port
+  - **Use:** `kickside.inbox:block.review` in a Flow
   - **Avoid:** custom approval table per feature
 - **Add a file pipeline**
   - **Use:** uploads type/processor/artifacts
   - **Avoid:** direct file path handoff
 - **Add KB ingestion**
-  - **Use:** KB thread event + materializer contract
+  - **Use:** KB content event + engine-declared source projection
   - **Avoid:** direct engine writes from UI
 - **Add graph enrichment**
   - **Use:** KB engine/store contract + worker
@@ -85,10 +85,10 @@
   - **Use:** colocated `_test.lua` + `test/` harness
   - **Avoid:** testing only through the app
 - **Develop against a live app**
-  - **Use:** governance fs sync ([Dev Loop](14-dev-loop.md))
+  - **Use:** a workspace replacement and module-owned source ([Dev Loop](14-dev-loop.md))
   - **Avoid:** rebuilding the app per change
 - **Publish a module**
-  - **Use:** Makefile release check + Hub publish ([Publishing](15-publishing.md))
+  - **Use:** Makefile release check + reviewed GitHub release workflow ([Publishing](15-publishing.md))
   - **Avoid:** publishing without verification
 
 ## Decision Tree

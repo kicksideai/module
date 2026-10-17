@@ -59,7 +59,7 @@ Use these before merging or publishing a module.
 
 This repository does not maintain a frontend checklist. Follow the
 [Frontend And Web Components source-of-truth directive](07-frontend-and-web-components.md),
-query the `wippy.frontend` KB, and verify the touched module against the current
+and verify the touched module against the current
 official Wippy frontend compliance checklist.
 
 ## Integration Checklist
@@ -77,8 +77,10 @@ official Wippy frontend compliance checklist.
 - `wippy lint` or module lint passes where available.
 - The module Makefile's `verify` and PostgreSQL test targets pass (page 13).
 - App boots on a clean DB if migrations changed.
-- Upgrades crossing core migration 14 run with SQLite `foreign_keys` ON and
-  zero `PRAGMA foreign_key_check` violations (page 13).
+- Stored-shape changes include forward-only, idempotent, resumable migrations
+  tested with data from the previous published version on both engines.
+- Hub Update all and restart updates existing installations without separate
+  data-conversion steps. Published callers and stored references retain compatibility.
 - No runtime logs or generated assets are committed unintentionally
   (`static/` regeneration is deliberate; see page 12).
 - `git diff --check` is clean.

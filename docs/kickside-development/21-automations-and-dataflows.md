@@ -27,12 +27,27 @@ for an event stream, or a selected collection port and its connection/config.
 `transform.kind` is `none`, `expr`, `llm`, `func`, or `code` as declared by the
 Data Sync schema. The source port, transform, and sink port form the dataflow;
 validate sample envelopes with `/api/v1/transform/validate` before installing.
+Editors read captured source envelopes with
+`POST /api/v1/automations/source-samples` using `{source, config, limit}`.
+The response returns `success`, `samples`, and the selected source’s
+`output_schema` when declared. It reads one bounded page under the caller and
+leaves installed drive positions unchanged. An empty source supplies no samples.
+See `platform/automation/src/README.md` for the acquisition contract.
+
 A `func` transform names its function and the resource it reads:
 `{ kind = "func", ["function"] = "acme.deals:transform", resource_id =
 "<component ID>" }`. Declare additional resources in `resources` as needed.
 Install and reconfigure refuse a function transform without enforceable resource
 references; both the operator and stored execution principal need the declared
 access (`platform/transform/src/strategy/func.lua`, `platform/sync/src/round/plan.lua`).
+Transform functions receive `{item = {item_key, envelope, input}, config}`:
+`item.input` is the source payload. Expression bindings expose that same value
+as both `payload` and `input`; `item` and `envelope` retain the strategy item and
+its metadata. A function returns its value directly, or explicitly skips with
+`{present = false, skip = "reason"}`. The round records a skip separately and
+performs no sink write. An absent output without an explicit skip fails the
+item. `false` remains a present value and still undergoes sink validation.
+
 A recurring Data Sync schedule uses `trigger.schedule = { type = "interval" |
 "ticker" | "cron", expression = "..." }`. Other Automation kinds may use
 `once`; the Data Sync input schema deliberately requires a recurring cadence.
