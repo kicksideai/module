@@ -14,9 +14,12 @@
 - **`core/execution`**
   - **Role:** execution identity, delegation, and trace context
   - **Read:** [Execution Identity And Deadline Jobs](20-execution-identity-and-jobs.md)
+- **`core/realtime-dispatch`**
+  - **Role:** bounded audience dispatch through the selected realtime owner
+  - **Read:** [Threads, Events, And Projections](03-threads-events-projections.md)
 - **`core/jobs`**
   - **Role:** leased jobs, deadlines, retries, and wake demand
-  - **Read:** [Threads, Events, And Projections](03-threads-events-projections.md)
+  - **Read:** [Execution Identity And Deadline Jobs](20-execution-identity-and-jobs.md)
 
 ## Platform
 
@@ -43,10 +46,10 @@
   - **Read:** [Blocks, Flows, Workflows, And Ports](18-blocks-flows-workflows.md)
 - **`platform/automation`**
   - **Role:** install/control/trigger engine for automation kinds
-  - **Read:** [Knowledge, Uploads, Automation, And Inbox](05-knowledge-uploads-automation-inbox.md)
+  - **Read:** [Automations And Dataflows](21-automations-and-dataflows.md)
 - **`platform/sync`**
   - **Role:** Data Sync automation kind
-  - **Read:** [Knowledge, Uploads, Automation, And Inbox](05-knowledge-uploads-automation-inbox.md)
+  - **Read:** [Automations And Dataflows](21-automations-and-dataflows.md)
 - **`platform/webhooks`**
   - **Role:** user-minted trigger source endpoints
   - **Read:** [Knowledge, Uploads, Automation, And Inbox](05-knowledge-uploads-automation-inbox.md)
@@ -74,12 +77,15 @@
 - **`platform/realtime`**
   - **Role:** realtime contract
   - **Read:** [Contracts And Ports](02-contracts-and-ports.md)
+- **`platform/ui-kit`**
+  - **Role:** shared frontend vocabulary consumed at build time
+  - **Read:** [Frontend And Web Components](07-frontend-and-web-components.md)
 - **`platform/security`**
   - **Role:** scopes, role catalog, and policy support
-  - **Read:** [Canonical Model](00-canonical-model.md)
+  - **Read:** [Security And Module Access](23-security-and-module-access.md)
 - **`platform/settings`**
   - **Role:** runtime settings and admin-editable blocks
-  - **Read:** [Application Patterns](10-application-patterns.md)
+  - **Read:** [Settings](17-settings.md)
 - **`platform/ui`**
   - **Role:** nav/admin UI APIs
   - **Read:** [Frontend And Web Components](07-frontend-and-web-components.md)
@@ -114,7 +120,7 @@ Provider, engine, and private business packages are independent repositories.
 Their installed declarations and published README are authoritative. Search the
 Hub by capability, use dependency `plan` with `include_entries`, then follow
 [Discovery, Addressing, And Context](19-discovery-addressing-and-context.md).
-Do not assume an old `providers/<name>` monorepo path still exists.
+Provider modules live in the kicksideai/providers repository.
 
 ## App
 

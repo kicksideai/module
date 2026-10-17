@@ -6,16 +6,16 @@ defines a contract. A provider or feature module implements it with a binding.
 Do not import another module's persistence code just to call a feature. Open its
 contract or use its registry contract.
 
-Backticked paths in this page cite the KickSide monorepo; the examples are
+Backticked paths in this page cite the kicksideai/kickside repository; the examples are
 complete on their own.
 
 Entry kinds and cross-module conventions live in
 [Conventions](16-conventions.md).
 
 Contract identity is `namespace:name`. Base contracts live in the dedicated
-`kickside/contract` module, one namespace file per family: `kickside.contract:*`
-in `core/contract/src/_index.yaml`, `kickside.data:*` (pullable/writable) in
-`core/contract/src/data/_index.yaml`, `kickside.trigger:*` in
+`kickside/contract` module: `kickside.contract:*` under `core/contract/src/`
+and `core/contract/src/registry/*`, `kickside.data:*` (pullable/writable) under
+`core/contract/src/data/registry/*`, and `kickside.trigger:*` in
 `core/contract/src/trigger/_index.yaml`. Product modules define their own
 domain contracts in their own namespaces.
 
@@ -119,8 +119,9 @@ for the full request and response and
 The full method envelopes — argument and result schemas including error
 shapes — live in the contract.definition's input/output schemas: for
 `kickside.data:writable`, the write output's DataError constrains `scope` to
-`item`, `flow`, `connection`, or `provider`, and the success branch must not
-carry an `error` (`core/contract/src/data/_index.yaml`).
+`item`, `flow`, `connection`, `provider`, `capacity`, or `identity`, and the
+success branch must not carry an `error`
+(`core/contract/src/data/registry/writable_contracts/_index.yaml`).
 
 `contracts` is a list: one binding can implement several contracts, and
 `default: true` on a contract entry marks the default implementation. From

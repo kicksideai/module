@@ -144,8 +144,8 @@ projection synchronously or poll for catch-up. If an action needs immediate
 acknowledgment, answer with the appended event or admitted run ID and let the
 client observe eventual read-model state. A `component.<id>` realtime topic
 wakes subscribed clients; the client refetches the authoritative endpoint and
-disposes its subscription on unmount. Event retention must allow every cursor
-and event Automation drive to drain; `drain_aware: true` preserves that
-boundary. See [Automations And Dataflows](21-automations-and-dataflows.md),
+disposes its subscription on unmount. Retention never prunes past the lowest
+retention pin or projection cursor, so every cursor and event Automation drive
+can drain; `retention.event_days` sets the age cutoff. See [Automations And Dataflows](21-automations-and-dataflows.md),
 [Execution Identity And Deadline Jobs](20-execution-identity-and-jobs.md), and
 the [Deals CRM](22-deals-crm.md) walkthrough.

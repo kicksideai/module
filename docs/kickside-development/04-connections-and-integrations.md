@@ -112,7 +112,7 @@ base library; the transport does the provider-specific work.
   (`platform/connection/src/api/create_policy.lua`).
 - Providers read credentials through the actor-validated component service,
   through `component.open(component_id, component.ACCESS.READ, contract_id)`
-  or `component.read_context(component_id, required_access)`. Trusted private
+  or `component.get_context(component_id, required_access)`. Trusted private
   readers are reserved for framework-owned work. There is no registry
   or raw-SQL fallback for credential lookup.
 - Optional live validation: when `body.validate` is true, create opens the new

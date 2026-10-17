@@ -1,16 +1,32 @@
 -- Log entry rows. One row per acknowledged write.
 local sql = require("sql")
-local env = require("env")
+local registry = require("registry")
 local uuid = require("uuid")
 
--- Code default with env override for the module-owned db resource id.
-local DB_ID = env.get("ACME_STARTER_DB_ID") or "app:db"
+-- The target_db requirement writes the host database resource ID here.
+local DB_CONFIG = "acme.starter.persist:db_config"
 
 local repo = {}
 
+function repo.db_id(): (string?, error?)
+    local entry, err = registry.get(DB_CONFIG)
+    if err then return nil, err end
+    local db_id = entry and entry.meta and entry.meta.db_id
+    if type(db_id) ~= "string" or db_id == "" then
+        return nil, errors.new({
+            message = DB_CONFIG .. " has no db_id; bind the target_db requirement",
+            kind = errors.INVALID,
+            retryable = false,
+        })
+    end
+    return db_id, nil
+end
+
 local function with_db(fn)
-    local db, err = sql.get(DB_ID)
-    if err or not db then return nil, err or ("database unavailable: " .. DB_ID) end
+    local db_id, id_err = repo.db_id()
+    if not db_id then return nil, id_err end
+    local db, err = sql.get(db_id)
+    if err then return nil, err end
     local result, rerr = fn(db)
     db:release()
     return result, rerr

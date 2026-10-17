@@ -50,7 +50,8 @@ item. `false` remains a present value and still undergoes sink validation.
 
 A recurring Data Sync schedule uses `trigger.schedule = { type = "interval" |
 "ticker" | "cron", expression = "..." }`. Other Automation kinds may use
-`once`; the Data Sync input schema deliberately requires a recurring cadence.
+`once`; Data Sync accepts only the recurring types. An event source takes no
+schedule.
 
 An event source is a `registry.entry` with `meta.type:
 kickside.automation.port`, `binding` set to its component kind, `event` set to
@@ -58,7 +59,7 @@ an exact declared event entry, and `config_schema` choosing its thread ID.
 `platform/webhooks/src/_index.yaml` declares `webhook_received` this way.
 Collection ports bind `kickside.data:pullable`; destination ports bind
 `kickside.data:writable` and declare `operations` such as `upsert` and
-`delete`. The release source has complete destination examples in
+`delete`. The repository has complete destination examples in
 `platform/knowledge/src/sink/_index.yaml` and `platform/workflows/src/_index.yaml`.
 
 ## Drives, rounds, and timing
@@ -143,7 +144,7 @@ idempotency_key)` and scopes any key listing to the asking origin. Store the sta
 constraint and return `{ success = true, result = "created" | "updated",
 dest_ref = { id = ... } }`, or a classified `{ success = false, error = {
 code, message, retriable, scope } }`. `scope` is `item`, `flow`, `connection`,
-or `provider` as constrained by the writable contract. Do not silently
+`provider`, `capacity`, or `identity` as constrained by the writable contract. Do not silently
 acknowledge an uncommitted side effect.
 
 The Automation round
@@ -166,7 +167,7 @@ install Data Sync with that port as `trigger.source`. Select
 `{ flow_ref = { kind = "flow", id = "<workflow component ID>",
 version = <published version number> } }` as `sink_config`.
 The Run Workflow port maps to the `kickside.workflows:run` writable binding,
-whose `write` implement admission (`platform/workflows/src/runs/run_writable.lua`).
+whose `write` implements admission (`platform/workflows/src/runs/run_writable.lua`).
 The source item's stable identity becomes the run's deduplication identity;
 the current automation revision travels in `automation_ref`. Publish the Flow
 version first, use its exact reference, and inspect the run's admitted and

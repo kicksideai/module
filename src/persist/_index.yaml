@@ -2,6 +2,12 @@ version: "1.0"
 namespace: acme.starter.persist
 
 entries:
+  # acme.starter.persist:db_config
+  - name: db_config
+    kind: registry.entry
+    meta:
+      comment: Holds the database resource ID; the target_db requirement rewrites meta.db_id.
+
   # acme.starter.persist:repo
   - name: repo
     kind: library.lua
@@ -10,5 +16,5 @@ entries:
     source: file://repo.lua
     modules:
       - sql
-      - env
+      - registry
       - uuid

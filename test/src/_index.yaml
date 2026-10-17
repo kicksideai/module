@@ -14,16 +14,6 @@ entries:
     kind: ns.definition
     meta: { title: Starter Test Harness }
 
-  - name: wait_for_boot
-    kind: function.lua
-    meta:
-      type: test
-      suite: "00_setup"
-      comment: Waits for the acme_starter_log_entries migration to land on app:db before the suites run.
-    source: file://wait_for_boot.lua
-    modules: [sql, time]
-    method: run
-
   - name: log_test
     kind: function.lua
     meta:
@@ -32,7 +22,7 @@ entries:
       group: Acme Starter
       suite: acme_starter
     source: file://log_test.lua
-    modules: [funcs, registry, security, channel, time]
+    modules: [funcs, registry, security, channel, time, uuid]
     imports:
       test: wippy.test:test
       repo: acme.starter.persist:repo
@@ -56,6 +46,7 @@ entries:
     meta:
       comment: In-memory database for the starter suites.
     file: ":memory:"
+    foreign_keys: true
 
   - name: env_storage
     kind: env.storage.file
@@ -143,3 +134,12 @@ entries:
     meta:
       comment: Module under test; test/.wippy.yaml replaces this package with the local checkout.
     component: "acme/starter"
+    parameters:
+      - name: acme.starter:target_db
+        value: app:db
+      - name: acme.starter:api_router
+        value: app:api
+      - name: acme.starter:ui_server
+        value: app:gateway
+      - name: acme.starter.security:user_security_scope
+        value: app:user

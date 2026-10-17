@@ -7,11 +7,20 @@ local security = require("security")
 local repo = require("repo")
 local channel = require("channel")
 local time = require("time")
+local uuid = require("uuid")
 
 local WRITE_ID = "acme.starter.sink:write"
 local SINK_ID = "acme.starter:log_sink"
 local PORT_ID = "acme.starter:log"
 local BLOCK_FN_ID = "acme.starter.blocks:block_write_log"
+
+-- Delivery keys are durable across runs on a persistent database, so each run
+-- writes under its own key space.
+local RUN_ID = uuid.v7()
+
+local function delivery_key(name: string): string
+    return RUN_ID .. ":" .. name
+end
 
 local function executor(actor_id)
     return funcs.new():with_actor(security.new_actor(actor_id, {}))
@@ -36,11 +45,19 @@ local function define_tests()
             test.not_nil(sink, SINK_ID .. " is missing")
         end)
 
+        test.it("stores rows in the database bound by target_db", function()
+            local db_id, err = repo.db_id()
+            test.is_nil(err)
+            test.eq(db_id, "app:db")
+            local migration = registry.get("acme.starter.migrations:01_create_log_entries")
+            test.eq(migration.meta.target_db, db_id)
+        end)
+
         test.it("acknowledges a write and stamps the configured label", function()
             local res, err = executor("starter-test-user"):call(WRITE_ID, {
                 origin = "starter-test-sync",
                 sink_op = "upsert",
-                idempotency_key = "starter-t-1",
+                idempotency_key = delivery_key("starter-t-1"),
                 config = { label = "TEST" },
                 input = { content = "hello from the lifecycle test" },
             })
@@ -58,7 +75,7 @@ local function define_tests()
             local res, err = executor("starter-test-user"):call(WRITE_ID, {
                 origin = "starter-test-sync",
                 sink_op = "upsert",
-                idempotency_key = "starter-t-2",
+                idempotency_key = delivery_key("starter-t-2"),
                 input = { content = "row persisted by the suite" },
             })
             test.is_nil(err)
@@ -106,7 +123,7 @@ local function define_tests()
 
         test.it("replays one durable effect with its original destination", function()
             local before = count_rows()
-            local request = { origin = "starter-replay-sync", sink_op = "upsert", idempotency_key = "retry",
+            local request = { origin = "starter-replay-sync", sink_op = "upsert", idempotency_key = delivery_key("retry"),
                 config = { label = "REPLAY" }, input = { content = "one effect" } }
             local first, first_err = executor("starter-test-user"):call(WRITE_ID, request)
             test.is_nil(first_err)
@@ -122,7 +139,7 @@ local function define_tests()
         end)
 
         test.it("refuses a changed content or label under a durable delivery key", function()
-            local request = { origin = "starter-bound-sync", sink_op = "upsert", idempotency_key = "bound",
+            local request = { origin = "starter-bound-sync", sink_op = "upsert", idempotency_key = delivery_key("bound"),
                 config = { label = "ORIGINAL" }, input = { content = "original" } }
             local first, first_err = executor("starter-test-user"):call(WRITE_ID, request)
             test.is_nil(first_err)
@@ -150,7 +167,7 @@ local function define_tests()
             local ids = {}
             for _, origin in ipairs({ "starter-origin-one", "starter-origin-two" }) do
                 local res, err = executor("starter-test-user"):call(WRITE_ID, {
-                    origin = origin, sink_op = "upsert", idempotency_key = "shared",
+                    origin = origin, sink_op = "upsert", idempotency_key = delivery_key("shared"),
                     input = { content = "same key" },
                 })
                 test.is_nil(err)
@@ -167,7 +184,7 @@ local function define_tests()
             local pending = {}
             for i = 1, 2 do
                 local cmd, err = executor("starter-test-user"):async(WRITE_ID, {
-                    origin = "starter-concurrent-sync", sink_op = "upsert", idempotency_key = "race",
+                    origin = "starter-concurrent-sync", sink_op = "upsert", idempotency_key = delivery_key("race"),
                     input = { content = "concurrent" },
                 })
                 test.is_nil(err)
@@ -193,7 +210,7 @@ local function define_tests()
             local pending = {}
             for _, content in ipairs({ "first payload", "second payload" }) do
                 local cmd, err = executor("starter-test-user"):async(WRITE_ID, {
-                    origin = "starter-divergent-sync", sink_op = "upsert", idempotency_key = "divergent-race",
+                    origin = "starter-divergent-sync", sink_op = "upsert", idempotency_key = delivery_key("divergent-race"),
                     input = { content = content },
                 })
                 test.is_nil(err)

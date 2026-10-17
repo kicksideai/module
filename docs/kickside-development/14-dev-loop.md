@@ -1,7 +1,7 @@
 # Dev Loop
 
 Modules are developed against a live, Hub-installed KickSide application, not
-against the KickSide monorepo. Keep two independent directories:
+against a KickSide source checkout. Keep two independent directories:
 
 Start new work from the public
 [kicksideai/module](https://github.com/kicksideai/module) template.
@@ -53,8 +53,9 @@ wippy run -c \
 Bare `wippy run` reads the exact locked graph and does not resolve the Hub.
 Installed module updates use Keeper's Hub plan/install UI/API with `>=` ranges.
 Never edit `wippy.lock` to update modules. Use **System → Modules → Update all**, review the plan, apply it, and restart from the same installation directory. Module migrations update existing data as part of the Hub update; no separate data-conversion step is required.
-The published SQLite profile already supplies durable application and registry
-history under `.wippy/`; do not add a second history configuration.
+The base configuration stores registry history in `.wippy/registry.db`, and
+the SQLite profile stores application data under `.wippy/`; do not add a second
+history configuration.
 
 ## Place The Module Source
 
@@ -191,7 +192,7 @@ Inspect exact runtime state before changing it:
 
 ```json
 {"id":"keeper.state.tools:get_entries","arguments":{
-  "ids":["acme.starter:log_write"],
+  "ids":["acme.starter.sink:write"],
   "include_source":true,
   "full":true
 }}
@@ -202,7 +203,7 @@ Stage an anchored source or definition edit:
 ```json
 {"id":"keeper.state.tools:edit","arguments":{
   "command":"str_replace",
-  "path":"acme.starter:log_write",
+  "path":"acme.starter.sink:write",
   "old_str":"exact text from the inspected entry",
   "new_str":"replacement text"
 }}
@@ -314,8 +315,8 @@ Over the state tools (traits `keeper.agents.traits.state:explorer`):
 
 ```json
 {"operation": "search", "attributes": {"meta.type": "agent.trait"}}
-{"operation": "namespace", "root": "kickside.telegram"}
-{"operation": "entries", "ids": ["kickside.telegram:connection"]}
+{"operation": "namespace", "name": "kickside.telegram"}
+{"operation": "entries", "ids": ["kickside.telegram.connection:telegram_connection"]}
 ```
 
 The registry is the ground truth: an entry fetched from a running app is a
@@ -346,8 +347,8 @@ tools instead of files. Entries are addressed as `namespace:name`; each carries
 a YAML definition and an optional source body:
 
 ```json
-{"command": "view", "path": "acme.starter:log_write"}
-{"command": "str_replace", "path": "acme.starter:log_write",
+{"command": "view", "path": "acme.starter.sink:write"}
+{"command": "str_replace", "path": "acme.starter.sink:write",
  "old_str": "exact text", "new_str": "replacement"}
 {"command": "create", "path": "acme.starter:helper",
  "file_text": "<definition>\nname: helper\nkind: function.lua\nsource: file://helper.lua\n</definition>\n<source>\nreturn {}\n</source>"}

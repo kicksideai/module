@@ -1,28 +1,80 @@
 version: "1.0"
 namespace: acme.starter.security
 
-# Module-owned access policy for the starter endpoints. The grant travels with
-# the module; the role group that receives it is injected by the
-# user_security_scope requirement, keeping the module app-agnostic.
+# Module access. Administrators select the public module_access policy for a
+# group in System -> Security; the platform Members group composes it by
+# default. Policies list exact entry IDs; endpoint names grant nothing. The
+# user_security_scope requirement binds the host group at install time.
 
 entries:
+  # acme.starter.security:module_access
+  - name: module_access
+    kind: security.policy
+    meta:
+      title: Starter
+      surface: acme.starter
+      intent: module_access
+      includes:
+        - acme.starter.security:module_runtime
+        - acme.starter.security:starter_endpoint_access
+    groups: []
+    policy:
+      resources:
+        - acme.starter.api:get_status.endpoint
+      actions: access
+      effect: allow
+
+  # acme.starter.security:module_runtime
+  - name: module_runtime
+    kind: security.policy
+    meta:
+      private: true
+    groups: []
+    policy:
+      resources:
+        - acme.starter:*
+        - acme.starter.api:*
+        - acme.starter.blocks:*
+        - acme.starter.migrations:*
+        - acme.starter.persist:*
+        - acme.starter.security:*
+        - acme.starter.sink:*
+      actions:
+        - registry.get
+        - registry.find
+        - contract.get
+        - contract.open
+        - contract.call
+        - contract.implementations
+        - contract.security
+        - funcs.call
+        - funcs.security
+      effect: allow
+
   # acme.starter.security:starter_endpoint_access
   - name: starter_endpoint_access
     kind: security.policy
     meta:
-      comment: Authenticated users may reach the starter product endpoints.
+      comment: Members load the starter view and its static bundle.
     groups: []
     policy:
       resources:
-        - acme.starter.api:*
+        - acme.starter:starter_view
+        - acme.starter:ui_static
       actions: access
       effect: allow
 
   # acme.starter.security:user_security_scope
   - name: user_security_scope
     kind: ns.requirement
+    default: kickside.security.groups:members
     meta:
-      comment: Application security group that may reach the starter endpoints.
+      value_kind: security.scope
+      comment: Application security group that receives the starter module policies.
     targets:
+      - entry: acme.starter.security:module_access
+        path: ".groups +="
+      - entry: acme.starter.security:module_runtime
+        path: ".groups +="
       - entry: acme.starter.security:starter_endpoint_access
         path: ".groups +="

@@ -10,11 +10,15 @@ param(
     [string]$GitHubOwner,
     [string]$HandbookRef = 'main',
     [ValidateSet('private', 'public')]
-    [string]$Visibility = 'private'
+    [string]$Visibility = 'private',
+    [string]$Version
 )
 
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (-not $Version) {
+    $Version = (Get-Content (Join-Path $Root '.release-please-manifest.json') -Raw | ConvertFrom-Json).'.'
+}
 
 function Invoke-Checked {
     param([string]$Command, [string[]]$Arguments, [string]$Directory = $Root)
@@ -101,12 +105,12 @@ switch ($Target) {
     'release-check' {
         Invoke-Verify
         Invoke-Checked wippy @('auth', 'status')
-        Invoke-Checked wippy @('publish', '--dry-run', '--create', '--module-visibility', $Visibility, '--module-type', 'plugin', '--embed', 'ui_fs')
+        Invoke-Checked wippy @('publish', '--version', $Version, '--dry-run', '--create', '--module-visibility', $Visibility, '--module-type', 'plugin', '--embed', 'ui_fs')
     }
     'publish' {
-        Invoke-Build
-        Invoke-Check
+        Invoke-Verify
         Invoke-Checked wippy @('auth', 'status')
-        Invoke-Checked wippy @('publish', '--create', '--module-visibility', $Visibility, '--module-type', 'plugin', '--embed', 'ui_fs')
+        Invoke-Checked wippy @('publish', '--version', $Version, '--dry-run', '--create', '--module-visibility', $Visibility, '--module-type', 'plugin', '--embed', 'ui_fs')
+        Invoke-Checked wippy @('publish', '--version', $Version, '--create', '--module-visibility', $Visibility, '--module-type', 'plugin', '--embed', 'ui_fs')
     }
 }

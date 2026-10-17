@@ -18,7 +18,7 @@ Modules author settings by dropping entries into their own `_index.yaml`.
 There is no central list to edit. Reads and writes go through the
 `kickside.settings:settings` contract; the DB stores admin overrides only.
 
-Key monorepo sources: `platform/settings/src/defs.lua` (discovery,
+Key sources: `platform/settings/src/defs.lua` (discovery,
 coercion), `types.lua`, `settings.lua` (contract methods, gating),
 `persist/writer.lua` (the single write path), `blocks.lua`,
 `_index.yaml` (contract, tab, view components).
