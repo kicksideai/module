@@ -23,7 +23,9 @@ pins resolved versions; module dependency declarations use `*` or `>=` ranges,
 never exact pins. One root `ns.definition` owns the namespace.
 A `ns.requirement` states a resource the host must supply and rewrites exact
 target fields such as `.meta.target_db`, `.meta.router`, `.meta.server`, or
-policy `.groups +=`. Do not set a host-owned default in the module. The host
+policy `.groups +=`. Do not set a host-owned resource default in the module.
+The published member-scope default and existing-binding precedence follow
+[Security And Module Access](23-security-and-module-access.md). The host
 selects the concrete database, authenticated router, HTTP server, security
 group, process host, and storage resources.
 
@@ -34,8 +36,8 @@ checks, initializer test, Wippy lint, frontend typecheck/build, and SQLite
 suites. For SQL changes also run `make postgres-up`, `make test-pg`, and
 `make postgres-down`. Inspect the emitted `static/index.js` and registry
 `view.component.entry_point`. `make release-check` includes an authenticated
-publish dry run; `make publish` builds and publishes privately by default.
-`make publish VIS=public` intentionally makes the release public. Use the
+publish dry run. The template disables direct `make publish`; reviewed changes
+release through its GitHub Release Please workflow. Use the
 module's checked-in Makefile for its exact targets; never call package-manager
 or Vite build commands directly in a Wippy repository. Authenticate with
 `wippy auth login` and check `wippy auth status` before the release check.
@@ -58,9 +60,13 @@ channel; the app shell refreshes its catalog after those events
 (`app/frontend/applications/main/src/app/app.vue`). Do not install by copying
 source into the host or editing `wippy.lock` by hand.
 
-Root application self-update through Hub is currently blocked by its targetless
-cloud deployment requirements (`app/src/deployment/_index.yaml`). This is a
-known limitation of updating `kickside/kickside` through that surface.
+Use **System → Modules → Update all**, review the plan, apply it, and restart from the same installation directory. Module migrations update existing data as part of the Hub update; no separate data-conversion step is required.
+
+A release that retires a stored shape includes a forward-only, idempotent,
+resumable migration in the owning module, tested against the previous published
+version's data on SQLite and PostgreSQL. Published entry IDs, requirements,
+endpoints, contracts, and event types remain stable unless their callers and
+stored references migrate together.
 
 Use [Testing And Migrations](13-testing.md) and the
 [Publishing Checklist](09-checklists.md) before releasing.

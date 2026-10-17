@@ -12,7 +12,7 @@ KickSide release source.
 `kickside.execution:execution_identity` is the sole constructor and resolver.
 A principal is `{ kind = "user" | "group" | "service", id = "..." }`. Its `id`
 is a canonical ID without a colon or whitespace. `capture()` selects the
-ambient caller; `capture({ principal = { kind = "service", id = "..." },
+ambient caller; `capture({ principal = { kind = "user", id = "..." },
 component_id = id })` selects a delegated principal and binds a component
 root. `authorized_by`, `captured_at`, credentials, and links are derived by the
 owner and cannot be supplied in capture input. Selection is recorded at
@@ -32,9 +32,10 @@ the Users scope resolver still checks the recorded principal and authorizer.
 changes it through the ADMIN-gated `SET_EXECUTION_IDENTITY` path: the component
 service prepares a one-use identity token; its command carries that token.
 Automation's `set_execution_identity` control coordinates this path. A regular
-`SET_CONTEXT` or `PATCH_CONTEXT` cannot change it. Choose a service principal
-when durable work must outlive an individual user, and grant delegation
-explicitly. The component owner cannot grant itself `may_act_as`.
+`SET_CONTEXT` or `PATCH_CONTEXT` cannot change it. Product execution roots
+select ordinary User principals, including bot accounts for durable work. Grant
+the bot’s resource access and the operator’s delegation separately. Framework
+workers use their declared system identity. The component owner cannot grant itself `may_act_as`.
 
 A synchronous tool or Block executes in its calling frame. It should check
 component access in that frame and pass the selected identity to durable

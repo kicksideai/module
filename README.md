@@ -15,7 +15,7 @@ make setup
 make lint typecheck build test
 ```
 
-The [Makefile](Makefile) owns the commands. See the [module authoring guide](https://github.com/kicksideai/docs/blob/main/building-modules/index.md) for contracts, requirements, and application integration.
+The [Makefile](Makefile) owns the commands. The bundled [developer handbook](docs/README.md) is an exact copy of the canonical handbook shipped by KickSide; `make sync-handbook` updates it and `make check-handbook` detects drift. See the [module authoring guide](https://github.com/kicksideai/docs/blob/main/building-modules/index.md) for contracts, requirements, and application integration.
 
 ![The starter status page shows an empty log in a fresh demonstration installation](https://raw.githubusercontent.com/kicksideai/docs/main/using/assets/module/starter.png)
 

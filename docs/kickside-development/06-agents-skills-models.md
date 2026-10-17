@@ -170,13 +170,13 @@ from its args gets nils at runtime.
 ### Return conventions
 
 A tool handler returns `(result, err)`. One convention covers every tool;
-`kickside.contract:tool_result` builds each shape
+`kickside.contract:tool_result` provides typed and domain error constructors
 (`core/contract/src/tool_result.lua`).
 
-- **Success** is any non-nil result: a table with full records (collections
-  add `next_cursor`), a Markdown string for document reads, or a control
-  object. `tool_result.ok(fields)` builds the conventional
-  `{ success = true, ... }` table.
+- **Success** is any non-nil result: an object, a compact collection page
+  with its declared continuation fields, a Markdown document string, or a
+  control object. Return that value directly. `tool_result.ok(value)` returns its input
+  unchanged; it adds no success envelope.
 - **Typed failure** for invalid input, a missing resource, denied access or an
   unavailable or failed dependency: `return nil, err` with
   `errors.new({ kind = errors.INVALID | NOT_FOUND | PERMISSION_DENIED |
@@ -186,21 +186,29 @@ A tool handler returns `(result, err)`. One convention covers every tool;
   context with `errors.wrap(err, message)`, which keeps its kind.
 - **Domain error** for an outcome the caller acts on:
   `{ success = false, error = "...", <structured fields such as code> }`,
-  built with `tool_result.domain_error(message, fields)`. `tool_result.field(key,
-  value)` returns an operation's value as a success field and passes the
-  operation's own domain error through.
+  built with `tool_result.domain_error(message, fields)`. Preserve domain fields
+  when returning it.
 - A bare string is never an error: `return nil, "..."` is a defect.
 
-`output_schema` describes the success table and the domain error fields.
+`output_schema` describes the actual result and domain error fields. Do not
+JSON-encode a table into text. List operations return compact summaries and
+retain paging. Use the declared `fields` input to select extra row fields,
+then the corresponding get operation to read one whole object. Paging uses
+the tool’s declared cursor, offset, or provider page token; the names are not
+interchangeable. CRM lists project selected `values` while `CRMGetRecord`
+returns the whole record. Provider get operations return the complete
+sanitized object; lists use their declared summary projections.
 
 Callers receive both failure forms:
 
 - **Agents**: a typed failure is the tool call's error; a domain error is the
   call's structured result.
-- **MCP** (`platform/mcp/src/dispatcher.lua`): both are `isError: true`. A
+- **MCP** (`platform/mcp/src/dispatcher.lua`): successful objects are JSON in
+  text content. Both failure forms are `isError: true`. A
   typed failure carries `structuredContent.error = { kind, message,
   retryable, details }`; a domain error carries the table itself as
-  `structuredContent`; the text content is the same JSON.
+  `structuredContent`. Domain-error text is the same JSON; typed-error text
+  contains the diagnostic message.
 - **Workflows**: a tool Block routes a typed failure to its Failed port
   (`code = FUNCTION_EXECUTION_FAILED` with the message) and delivers a domain
   error on its Result port as structured data.
@@ -262,23 +270,19 @@ prompt instructions
 The tool returns `_control.artifacts` with canonical
 `display_type: standalone|inline`; `type` is reserved for the persisted artifact
 content kind. `wippy/session` owns persistence and the opaque token used for
-`instructions: true` inline rendering. Standalone creation is available through
-the KickSide capability, but the current installed Session release does not yet
-include the catalog and live standalone-message behavior from
-[PR #22](https://github.com/wippyai/session/pull/22). The current installed Web
-Host also does not register or expose `<w-artifact>` in the managed top-level
-realm. Until both owning-module changes are published and installed, do not
-claim that catalog-backed inventories, live chat cards, or managed-panel preview
-are complete. The managed preview intentionally has no alternate renderer;
-agents must not claim a card is visible merely because the tool call succeeded.
+`instructions: true` inline rendering. Session owns standalone artifact persistence and chat messages; Web Host owns
+rendering and the artifact catalog exposed to the client. Install current
+compatible releases through Hub Update all. Verify the resulting artifact in
+chat or the gallery under the intended user; a successful creation result
+alone does not prove the client renders it.
 
 ## Skills
 
-A skill is one `components` row (identity/access/sharing) + one `skills` row
-whose `current_version_id` points at the head `skill_versions` row + immutable
-`skill_files` (references, assets, scripts). Refinement cuts a new immutable
-version atomically (`platform/skills/src/README.md:4-11`). Skills are authored
-at runtime by agents, not shipped as registry entries.
+A skill is a Component whose primary thread stores append-only version events.
+A projection folds those events into the current read model. Bundle files live
+in the injected filesystem and are referenced by SHA-256 in each version event;
+there is no separate skills/versions/files SQL schema. Refinement appends a new
+immutable version through the same writer. See `platform/skills/src/README.md`.
 
 Store dispatchers are per-method `function.lua` entries
 (`platform/skills/src/_index.yaml:323-419`): commands (`skill_create`,
@@ -305,14 +309,13 @@ The agent surface (`platform/skills/src/traits/_index.yaml`):
 Pinned skills: when `trait_contexts["...:skills"].skill_ids` is set,
 `init_skills` bakes those skill bodies into the prompt at compile.
 
-V1 stores scripts (`skill_files.kind = "script"` + `executable`) but does not
-execute them (`platform/skills/src/README.md:38-54`). The reserved runner slot
-is `platform/skills/src/runtime/`; it belongs in `kickside.skills`, not in
-agents or app code. A bundled `scripts/run.py` does not run today.
+Bundled scripts are stored as files and are not executed. `skill_runtime`
+exposes only `activate`, `list_files`, and `read_file`. Procedure activation
+retains the agent’s execution identity and grants no additional resource access.
 
 ## Agents
 
-Agents are components, not static registry entries. Core entries in
+User-created agents are Components. Built-in agents use registry declarations. Core entries in
 `platform/agents/src/_index.yaml`:
 
 - **`kickside.agents:agents`**
@@ -409,7 +412,8 @@ not patch vendored `wippy.llm` for connector-level discovery.
 Tool execution uses the session's current actor and scope. The resolver checks
 READ access to `kickside.agents:user_agent` and its component config. A tool
 uses `ctx.get("<trait field>")` for its validated trait context; for example,
-`crm-port/src/traits/crm_tool.lua` reads `ctx.get("crm_id")`. A trait that
+[CRM’s tool adapter](https://github.com/kicksideai/crm/blob/main/src/traits/crm_tool.lua)
+reads `ctx.get("crm_id")`. A trait that
 manages dynamic capabilities can read the validated `ctx.get("trait_contexts")`
 map. Do not treat a prompt-provided component ID as authorization: call
 `component.validate_access` in the current frame. For deferred work, the
@@ -425,16 +429,12 @@ Actor guard inside a tool (`platform/inbox/src/traits/inbox_submit.lua:28-31`):
     end
 ```
 
-Component access from a tool goes through `component.validate_access`
-(`platform/knowledge/src/traits/kb_render.lua:155-160`):
+Component access from a tool uses the actor-bound client and preserves errors:
 
 ```lua
-local function deny(kb_id: any): string?
-    if type(kb_id) ~= "string" or kb_id == "" then return "_kb_id is required_" end
-    local _, err = component.validate_access(kb_id :: string, component.ACCESS.READ)
-    if err then return "_access denied_" end
-    return nil
-end
+local opened, err = component.open(kb_id, component.ACCESS.READ, target_contract)
+if err then return nil, err end
+return opened:get_status({})
 ```
 
 Because the tool runs under the caller's actor, `validate_access` resolves

@@ -12,7 +12,7 @@ components, contracts, ports, thread events, trace context, and public meta.
 - the `kickside.knowledge:kb_store_lifecycle` engine store contract
 - the `kickside.knowledge:knowledge_bases` registry contract
 - ingestion/injection workers
-- digest and graph enrichment coordination
+- engine-neutral content admission and source projection wiring
 - memory/tool traits
 - the Knowledge web component surface
 

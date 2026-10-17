@@ -209,8 +209,9 @@ compare-and-set write-back through `component.update`),
 `component.list_system`, `component.system_delete`
 (`core/component/src/component.lua:642-665`).
 
-Every client function returns `(value, error?)` and never raises; the service
-wraps results in a `{success, error}` envelope.
+Client operations return `(value, error?)`. Check the error before using the
+result. Service methods retain their declared domain result shapes; do not
+assume a uniform envelope.
 
 ## Public Meta Fields
 
@@ -309,15 +310,12 @@ lifecycle reaper; the only difference is the access gate
 2. `run_deletable` — if the binding implements `kickside.contract:deletable`,
    open it with the private context plus `component_id` and call `:delete({})`
    for the impl's own backing-data teardown.
-3. `cleanup_flow_points` — optional `kickside.workflows:flow_point_cleanup`
-   participant. Failed owner cleanup retains the component; blocked cleanup
-   keeps its fence for continuation.
-4. `unregister` consumes the committed fence without repeating authorization
+3. `unregister` consumes the committed fence without repeating authorization
    after retention removes grants. It removes the component row, meta, and access
    rows, appends the `deleted` lifecycle event, and records a durable primary-thread
    reap pointer in the same transaction. Direct children fail the delete unless
    `child_policy="reparent_root"` is passed.
-5. `purge_primary_thread` reaps the component's event log after unregister commits.
+4. `purge_primary_thread` reaps the component's event log after unregister commits.
    A failed or bounded purge retains its pointer for retention continuation;
    the public response reports the committed deletion and reap outcome. The
    pointer disappears only after the purge supplies completion proof.

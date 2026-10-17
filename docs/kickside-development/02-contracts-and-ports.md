@@ -203,7 +203,7 @@ Use `registry.entry` for declarative discovery:
 - **`upload.type`** — Upload type and processing pipeline
 - **`inbox.item_type`** — Inbox item renderer kind
 - **`agent.trait`** — Agent trait
-- **`tool`** — Agent or provider tool
+- **`tool`** — Agent or provider tool metadata on a `function.lua` entry
 - **`llm.model`** — Static model card
 
 If adding a provider requires editing a central switch, the seam is probably in

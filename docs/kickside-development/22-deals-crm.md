@@ -3,7 +3,7 @@
 This walkthrough builds `acme/deals` as a workspace CRM with an event log,
 read model, agent tool, event-driven workflow, and live board. The entry shapes
 come from `platform/webhooks`, `platform/inbox`, `platform/workflows`, the
-module template, and the external `crm-port` implementation. Replace
+module template, and the [CRM module](https://github.com/kicksideai/crm). Replace
 `acme` with your organization through the template initializer before adding
 the domain files. The exact namespace is declared by `ns.definition`.
 
@@ -17,7 +17,9 @@ build-command source. Add dependencies for `kickside/component`,
 `kickside/workflows` (when the workflow destination is used), and
 `wippy/migration` as `ns.dependency` entries with `*` or `>=` compatibility ranges.
 Keep module-owned `target_db`, `api_router`, `ui_server`, and
-`user_security_scope` requirements without host defaults. `target_db` rewrites
+`user_security_scope` requirements. Host resources have no module-selected
+default; the published member-scope default follows
+[Security And Module Access](23-security-and-module-access.md). `target_db` rewrites
 both migration `.meta.target_db` and the module's `db_config.meta.db_id`, as
 in `platform/webhooks/src/_index.yaml`. `api_router` rewrites endpoint
 `.meta.router`; `ui_server` rewrites the module's `http.static.meta.server`.
@@ -88,10 +90,16 @@ function M.win(args)
     local _, access_err = component.validate_access(args.workspace_id, component.ACCESS.WRITE)
     if access_err then return nil, access_err end
     local definition, get_err = contract.get("kickside.core:threads")
-    if get_err or not definition then return nil, get_err or "Threads unavailable" end
+    if get_err then return nil, get_err end
+    if not definition then
+        return nil, errors.new({kind = errors.UNAVAILABLE, message = "Threads unavailable"})
+    end
     local threads, open_err = definition:with_actor(security.actor())
         :with_scope(security.scope()):open()
-    if open_err or not threads then return nil, open_err or "Threads open failed" end
+    if open_err then return nil, open_err end
+    if not threads then
+        return nil, errors.new({kind = errors.UNAVAILABLE, message = "Threads open failed"})
+    end
     return threads:emit({
         component_id = args.workspace_id,
         impl_id = "acme.deals:workspace",
@@ -104,8 +112,9 @@ end
 return M
 ```
 
-The function entry for `M.win` sets `method: win` and attaches the output
-policy above. Validate `deal_id`, amount, and the current stage before
+The function entry for `M.win` sets `method: win` and declares the runtime
+capabilities used by the command. Component WRITE authorizes the declared
+domain output. Validate `deal_id`, amount, and the current stage before
 calling it; `deal.won` is an asserted domain fact, not an untrusted UI
 instruction. Append `deal.created` from a separate input command with the
 same contract-open pattern and WRITE check. Do not let a request set
@@ -167,8 +176,8 @@ already applied event then leaves the row unchanged. Decode event bodies if
 they arrive as JSON strings, as in `platform/inbox/src/persist/projection.lua`.
 Within `db:begin()`, fold the batch and query `COUNT(*)` for open deals;
 commit, release the DB, call `component.set_meta`, and return the advanced
-body and sequence. The release `crm-port/src/projection.lua` shows that exact
-transaction, release, public-meta, return order. A board read function
+body and sequence. The [CRM persistence source](https://github.com/kicksideai/crm/tree/main/src/persist)
+shows transaction and projection ownership in a larger module. A board read function
 checks `component.validate_access(workspace_id, component.ACCESS.READ)` and
 queries this table with bound `workspace_id`; its HTTP endpoint attaches to
 the host-provided authenticated `api_router`. The read path never appends or
@@ -195,7 +204,7 @@ and port. Declare `meta.delivery: at_least_once` and
 `meta.input_shape: record`, implement `write`. The stable
 `identity_key` maps to a unique deal ID. Every writable call requires a stable
 `origin`; round writes use the automation ID. Receipt identity is
-`(origin, sink_op, idempotency_key)`. The real `crm-port/src/sink` shows record,
+`(origin, sink_op, idempotency_key)`. The [CRM sink](https://github.com/kicksideai/crm/tree/main/src/sink) shows record,
 activity, relation, and membership writes and a `list_keys` reconciliation
 function. Keep the destination config's `crm_id` as a runtime component ID and
 check its WRITE access before appending domain facts.
@@ -222,8 +231,8 @@ as required by `platform/sync/src/_index.yaml`. The emitted `deal.won` is
 pulled by the event drive; the round gives each item a stable identity; the
 Workflow writable admits one run against that exact published version and
 returns its run ID. Inspect run state through Workflows. For a human approval
-step, use the Inbox Block or sink and a Flow wait tied to `trace_context`
-(`run_id` and `correlation_key`); the Inbox resolution event resumes the run.
+step, use `kickside.inbox:block.review`. Blocks/Dataflow commits the park and
+resumes with the Flow ID and native signal ID after the Inbox decision.
 For a timed SLA, declare a schedule drive or an exact-deadline job as described
 in [Execution Identity And Deadline Jobs](20-execution-identity-and-jobs.md).
 
@@ -233,8 +242,8 @@ Declare a `registry.entry` trait with `meta.type: agent.trait`,
 `meta.public: true`, `tools: [acme.deals.traits:deals_tool]`, and a
 `context_schema` containing `workspace_id`. Declare the tool as
 `function.lua` with `meta.type: tool`, `llm_alias`, `input_schema`, and
-`output_schema`. `crm-port/src/traits/_index.yaml` is a full read/write tool
-example; `platform/inbox/src/traits/_index.yaml` shows a small tool with an
+`output_schema`. [CRM’s tools](https://github.com/kicksideai/crm/blob/main/src/traits/_index.yaml)
+provide read/write examples; `platform/inbox/src/traits/_index.yaml` shows a small tool with an
 output-event policy. In the handler, read the validated trait field with
 `ctx.get("workspace_id")` for configured workspace selection; accept an explicit tool argument only after
 checking component access, then call the same domain writer as HTTP and the
@@ -280,7 +289,8 @@ committed read-model result through an event-driven test condition, move it to
 Won, observe the one onboarding run, resolve any Inbox approval, and confirm
 the board refetches on a realtime wake. Inspect the browser console after
 navigation and each interaction. Run the module Makefile's verification and
-publish targets; install or update it through System → Hub, with the host
+release checks; publish through the reviewed GitHub release workflow. Install
+or update it through **System → Modules**, with the host
 supplying its requirements.
 
 ## CRM delivery recovery
@@ -290,5 +300,6 @@ its event and projection settle. The CRM event stores the payload digest,
 outcome, and destination reference. Recovery checks that digest before
 answering or rebuilding a missing receipt; changing the payload under the same
 delivery identity returns a conflict. Receipt retention is 30 days. The live
-CRM writer lease remains in the final schema and protects receipt writes.
+CRM sink commits completed receipts without a writer lease; existing retired
+lease tables remain inert and are not part of delivery.
 Deleting a Data Sync retires its engine receipts and keeps destination records.

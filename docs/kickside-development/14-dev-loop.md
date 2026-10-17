@@ -29,8 +29,8 @@ wippy run kickside/kickside -c \
   --profile bootstrap_admin --profile local --profile sqlite \
   --set vars.local_port=8090 \
   --set vars.local_public_api_url=http://localhost:8090 \
-  --set vars.bootstrap_admin_email=<email> \
-  --set vars.bootstrap_admin_password=<password>
+  --set vars.bootstrap_admin_email=developer@example.com \
+  --set vars.bootstrap_admin_password="<initial-admin-password>"
 ```
 
 This first invocation resolves the application graph, writes `wippy.lock`, and
@@ -46,14 +46,13 @@ wippy run -c \
   --profile bootstrap_admin --profile local --profile sqlite \
   --set vars.local_port=8090 \
   --set vars.local_public_api_url=http://localhost:8090 \
-  --set vars.bootstrap_admin_email=<email> \
-  --set vars.bootstrap_admin_password=<password>
+  --set vars.bootstrap_admin_email=developer@example.com \
+  --set vars.bootstrap_admin_password="<initial-admin-password>"
 ```
 
 Bare `wippy run` reads the exact locked graph and does not resolve the Hub.
 Installed module updates use Keeper's Hub plan/install UI/API with `>=` ranges.
-Never edit `wippy.lock` to update modules. Root app self-update through Hub is
-currently blocked by targetless cloud deployment requirements.
+Never edit `wippy.lock` to update modules. Use **System → Modules → Update all**, review the plan, apply it, and restart from the same installation directory. Module migrations update existing data as part of the Hub update; no separate data-conversion step is required.
 The published SQLite profile already supplies durable application and registry
 history under `.wippy/`; do not add a second history configuration.
 
@@ -91,8 +90,8 @@ wippy run --config .wippy.workspace.yaml -c \
   --profile bootstrap_admin --profile local --profile sqlite \
   --set vars.local_port=8090 \
   --set vars.local_public_api_url=http://localhost:8090 \
-  --set vars.bootstrap_admin_email=<email> \
-  --set vars.bootstrap_admin_password=<password>
+  --set vars.bootstrap_admin_email=developer@example.com \
+  --set vars.bootstrap_admin_password="<initial-admin-password>"
 ```
 
 Use the same config when inspecting or linting the assembled application:

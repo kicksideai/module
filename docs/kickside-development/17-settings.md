@@ -129,8 +129,8 @@ silently drops the whole definition. `defs.coerce` canonicalizes on every
 read and write:
 
 - `string`/`secret` - must be a Lua string
-- `int` - `tonumber`, rejected unless whole, then `math.floor`; `"5"` in a
-  string fails
+- `int` - `tonumber`, rejected unless whole, then `math.floor`; numeric
+  strings such as `"5"` are accepted
 - `bool` - must be a real boolean, not `"true"`
 - `duration` - a string `time.parse_duration` accepts (`24h`); stored as
   the original string

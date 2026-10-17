@@ -8,7 +8,6 @@ harness. The package manifest excludes the harness and generated local state.
 <module>/
   wippy.yaml
   Makefile
-  AGENTS.md
   src/_index.yaml
   src/api/             # HTTP handlers and endpoint entries
   src/persist/         # repository, readers, writers, projections
@@ -20,6 +19,7 @@ harness. The package manifest excludes the harness and generated local state.
   ui/src/              # optional web-component source
   static/              # optional committed, built bundle
   test/src/            # standalone host resources and tests
+  test/wippy.yaml      # standalone harness manifest
   test/.wippy.yaml     # local replacement and DB profiles
 ```
 

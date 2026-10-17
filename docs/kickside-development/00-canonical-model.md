@@ -119,7 +119,7 @@ Do not mix these planes.
 - **Engine tables**
   - **Stored in:** module-owned SQL
   - **Visible to frontend:** Through module contracts/APIs
-  - **Examples:** `kb10_*`, upload artifact tables, skills tables
+  - **Examples:** `kb10_*`, upload artifact tables, CRM read tables
 
 Registry metadata is configuration for the module registry. Component public meta
 is runtime state for a specific component. They are different planes even though
@@ -210,8 +210,8 @@ see [Execution Identity And Deadline Jobs](20-execution-identity-and-jobs.md).
 
 The component service is the resource access authority. App endpoints are mounted
 behind token auth and endpoint firewall; module handlers then perform only the
-domain access check they own, normally `component.open`, `component.open_private`,
-or `component.validate_access`.
+domain access check they own, normally `component.open` or `component.validate_access`. Trusted private
+openers belong only to framework workers and teardown.
 
 Avoid direct SQL access checks outside persistence modules. If a tool or worker
 needs a resource, open the resource through the service/contract layer.
