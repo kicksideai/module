@@ -20,7 +20,6 @@ entries:
     kind: http.endpoint
     meta:
       comment: Status endpoint behind the authenticated API router.
-      router: app:api
     method: GET
     func: get_status
     path: /starter/status

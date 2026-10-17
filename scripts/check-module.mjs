@@ -44,6 +44,7 @@ if (!rootIndex.includes(`tag_name: ${identity.tag}`)) report('registry web-compo
 if (packageJson.wippy?.tagName !== identity.tag) report('package.json web-component tag differs from template identity')
 if (typeof packageJson.wippy?.description !== 'string' || packageJson.wippy.description.length < 120) report('wippy.description must explain the module behavior and usage')
 if (!securityIndex.includes('default: kickside.security.groups:members')) report('user_security_scope must default to the platform Members group')
+if (/^\s*default:\s*app[:.]/m.test(rootIndex)) report('requirements must not default to a host-owned app resource; the host binds them')
 if (!securityIndex.includes('intent: module_access')) report('the module must publish a module_access policy')
 if (!viteConfig.includes('preserveEntrySignatures: false')) report('web-component build must preserve the entry ownership contract')
 if (/--p-(red|green|blue|orange|yellow|purple|pink|sky|emerald)-\d+/i.test(styles)) report('frontend uses a nonexistent color-named --p-* token')

@@ -74,6 +74,7 @@ local function define_tests()
             test.eq(view.auto_register, true)
 
             local static = get(STATIC_ID)
+            test.eq(meta_of(static).server, "app:gateway")
             test.eq(data_of(static).path, "/" .. view.base_path)
             test.eq(qualify(data_of(static).fs, NS), FS_ID)
             get(FS_ID)

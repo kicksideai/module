@@ -45,6 +45,14 @@ local function define_tests()
             test.not_nil(sink, SINK_ID .. " is missing")
         end)
 
+        test.it("stores rows in the database bound by target_db", function()
+            local db_id, err = repo.db_id()
+            test.is_nil(err)
+            test.eq(db_id, "app:db")
+            local migration = registry.get("acme.starter.migrations:01_create_log_entries")
+            test.eq(migration.meta.target_db, db_id)
+        end)
+
         test.it("acknowledges a write and stamps the configured label", function()
             local res, err = executor("starter-test-user"):call(WRITE_ID, {
                 origin = "starter-test-sync",

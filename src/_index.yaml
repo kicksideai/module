@@ -29,17 +29,19 @@ entries:
   - name: target_db
     kind: ns.requirement
     meta:
+      value_kind: db.sql
       comment: Database resource for log entry rows and migrations.
-    default: app:db
     targets:
       - entry: acme.starter.migrations:01_create_log_entries
         path: .meta.target_db
+      - entry: acme.starter.persist:db_config
+        path: .meta.db_id
 
   - name: api_router
     kind: ns.requirement
     meta:
-      comment: HTTP router the starter endpoints attach to. Must enforce auth + endpoint_firewall.
-    default: app:api
+      value_kind: http.router
+      comment: Authenticated HTTP router the starter endpoints attach to. Must run token_auth and endpoint_firewall.
     targets:
       - entry: acme.starter.api:get_status.endpoint
         path: .meta.router
@@ -47,8 +49,8 @@ entries:
   - name: ui_server
     kind: ns.requirement
     meta:
+      value_kind: http.service
       comment: HTTP server the starter UI bundle is served from.
-    default: app:gateway
     targets:
       - entry: acme.starter:ui_static
         path: .meta.server
@@ -106,7 +108,6 @@ entries:
     kind: http.static
     meta:
       comment: Serves the starter web component bundle at /acme-starter.
-      server: app:gateway
     path: /acme-starter
     fs: acme.starter:ui_fs
     options:
