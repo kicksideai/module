@@ -22,6 +22,7 @@ check:
 	node scripts/test-initializer.mjs
 	node .github/scripts/test_release_workflow.mjs
 	python3 -B .github/scripts/test_delivery.py
+	python3 -B .github/scripts/test_dispatch_release_ci.py
 	python3 -B .github/scripts/test_release_baseline.py
 	node .github/scripts/test_release_dry_run.cjs
 build:
