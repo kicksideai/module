@@ -135,6 +135,11 @@ jobs:
         path: kickside
         token: ${{ secrets.SOURCE_READ_TOKEN || github.token }}
         persist-credentials: false
+    - name: Check template and handbook provenance
+      run: |
+        mkdir -p "$GITHUB_WORKSPACE/.scratch"
+        export TMPDIR="$GITHUB_WORKSPACE/.scratch"
+        make check check-handbook
     - name: Build, lint and Lua module tests
       run: ${{ matrix.commands }}
     defaults:
