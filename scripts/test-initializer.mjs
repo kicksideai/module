@@ -1,4 +1,6 @@
-import { cp, mkdtemp, readFile, rm } from 'node:fs/promises'
+import assert from 'node:assert/strict'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -42,6 +44,21 @@ for (const token of ['acme/starter', 'acme.starter', 'acme-starter', 'acme_start
 const second = await initialize(args, target)
 if (!second.alreadyInitialized || second.changedFiles !== 0) throw new Error('initializer is not idempotent')
 await import(`${pathToFileURL(resolve(target, 'scripts/check-module.mjs')).href}?initialized-test=1`)
+
+const packagePath = resolve(target, 'ui/package.json')
+const originalPackage = await readFile(packagePath, 'utf8')
+const editedPackage = JSON.parse(originalPackage)
+editedPackage.wippy.description += ' Updated module description.'
+await writeFile(packagePath, `${JSON.stringify(editedPackage, null, 2)}\n`)
+const staleCheck = spawnSync(process.execPath, ['scripts/check-module.mjs'], { cwd: target, encoding: 'utf8' })
+assert.equal(staleCheck.status, 1, 'check must reject stale bundle metadata')
+assert.match(staleCheck.stderr, /static\/wippy-meta\.json is stale/)
+
+const verify = execFileSync('make', ['--dry-run', 'verify'], { cwd: target, encoding: 'utf8' })
+const buildIndex = verify.indexOf('npm --prefix ui run build')
+const checkIndex = verify.indexOf('node scripts/check-module.mjs')
+assert.ok(buildIndex >= 0 && checkIndex > buildIndex, 'verify must build before checking bundle freshness')
+await writeFile(packagePath, originalPackage)
 
 console.log('Initializer test passed')
 await rm(target, { recursive: true, force: true })
