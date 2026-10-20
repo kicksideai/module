@@ -66,6 +66,9 @@ entries:
     kind: function.lua
     source: file://realtime_fixture.lua
     method: notify
+    modules: [process, security]
+    imports:
+      repo: acme.starter.persist:repo
 
   - name: wiring_test
     kind: function.lua
