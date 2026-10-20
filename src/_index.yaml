@@ -89,6 +89,8 @@ entries:
       comment: Persist and log each incoming item.
       group: Starter
       icon: tabler:terminal-2
+      delivery: at_least_once
+      input_shape: content
     contracts:
       - contract: kickside.data:writable
         methods:

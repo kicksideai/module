@@ -88,6 +88,17 @@ local function define_tests()
             test.eq(nav.component_tag, meta_of(get(VIEW_ID)).tag_name)
         end)
 
+        test.it("declares the writable sink delivery and input shape on its binding", function()
+            local binding = get("acme.starter:log_sink")
+            test.eq(binding.kind, "contract.binding")
+            test.eq(meta_of(binding).delivery, "at_least_once")
+            test.eq(meta_of(binding).input_shape, "content")
+            local contract = data_of(binding).contracts[1]
+            test.eq(contract.contract, "kickside.data:writable")
+            test.eq(contract.methods.write, "acme.starter.sink:write")
+            get(contract.methods.write)
+        end)
+
         test.it("contributes the write-log Block backed by its implementation function", function()
             local block = get(BLOCK_ID)
             test.eq(meta_of(block).type, "kickside.block")

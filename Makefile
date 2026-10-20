@@ -48,7 +48,10 @@ sync-handbook:
 	node scripts/sync-handbook.mjs --ref "$(if $(HANDBOOK_REF),$(HANDBOOK_REF),main)"
 check-handbook:
 	node scripts/sync-handbook.mjs --check --ref "$(if $(HANDBOOK_REF),$(HANDBOOK_REF),main)"
-verify: setup check lint typecheck build test
+verify:
+	$(MAKE) setup
+	$(MAKE) lint typecheck build
+	$(MAKE) check test
 release-check: verify
 	wippy auth status
 	wippy publish --version "$(VERSION)" --dry-run --create --module-visibility $(VIS) --module-type $(TYPE) $(EMBED)
