@@ -15,6 +15,6 @@ permissions:
 
 jobs:
   check:
-    uses: kicksideai/.github/.github/workflows/cla.yml@5401fa65bed7d8648125957520e94206ed1ffd0b
+    uses: kicksideai/.github/.github/workflows/cla.yml@ee731fdcfb7ebd68fac1f7db4b56dc2923bdc02d
     secrets:
-      CLA_APP_PRIVATE_KEY: ${{ secrets.CLA_APP_PRIVATE_KEY }}
+      CLA_TOKEN: ${{ secrets.CLA_TOKEN }}
