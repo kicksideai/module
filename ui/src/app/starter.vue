@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { api } from '@wippy-fe/proxy'
+import { ref, onUnmounted } from 'vue'
+import { api, on } from '@wippy-fe/proxy'
+import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import { Icon } from '@iconify/vue'
 
 // Starter page: shows the module identity and how many rows the log sink has
@@ -13,23 +14,32 @@ interface Status {
 const status = ref<Status | null>(null)
 const loading = ref(true)
 const error = ref('')
+let requestId = 0
 
 async function load() {
+  const current = ++requestId
   loading.value = true
   error.value = ''
   try {
     const { data } = await api.get('/api/v1/starter/status')
+    if (current !== requestId) return
     if (!data?.success) throw new Error(data?.error || 'Could not load starter status.')
     status.value = { module: String(data.module), count: Number(data.count) || 0 }
   } catch (e) {
+    if (current !== requestId) return
     status.value = null
     error.value = e instanceof Error ? e.message : 'Could not load starter status.'
   } finally {
-    loading.value = false
+    if (current === requestId) loading.value = false
   }
 }
 
-onMounted(load)
+const unsubscribe = on('acme.starter.changed', () => { void load() })
+useHostVisibilityRefresh(load)
+onUnmounted(() => {
+  ++requestId
+  unsubscribe()
+})
 </script>
 
 <template>

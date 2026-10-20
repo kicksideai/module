@@ -14,13 +14,13 @@ When contributing to the template itself, keep its uninitialized identity;
 when creating your own module, follow the [quick start](README.md).
 
 ```sh
-make setup lint typecheck build test
+make setup lint typecheck build test-ui test
 make postgres-up
 make test-pg
 make postgres-down
 ```
 
-These commands check setup, lint, frontend types and builds, and the SQLite harness. PostgreSQL is
+These commands check setup, lint, frontend types, builds and refresh behavior, and the SQLite harness. PostgreSQL is
 required for persistence or migration changes. Describe the registry owner and
 contract being changed, test public behavior, and regenerate `static/` from
 `ui/src`. Never commit credentials or local Wippy state.

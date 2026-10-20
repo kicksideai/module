@@ -8,6 +8,7 @@ local repo = require("repo")
 local channel = require("channel")
 local time = require("time")
 local uuid = require("uuid")
+local process = require("process")
 
 local WRITE_ID = "acme.starter.sink:write"
 local SINK_ID = "acme.starter:log_sink"
@@ -35,6 +36,40 @@ end
 
 local function define_tests()
     test.describe("acme.starter log sink", function()
+        test.it("notifies the mounted page after sink and Block writes commit", function()
+            local mailbox = process.listen("starter.notification")
+            local _, register_err = process.registry.register("starter.notifications")
+            test.is_nil(register_err)
+            local before = count_rows()
+            local policy, policy_err = security.policy("app:writer")
+            test.is_nil(policy_err)
+            local writer_scope = security.new_scope({ policy })
+            local writer = executor("starter-test-user"):with_scope(writer_scope)
+            local written, write_err = writer:call(WRITE_ID, {
+                origin = "starter-test-sync", idempotency_key = delivery_key("notification"),
+                input = { content = "notification from sink" },
+            })
+            local sink_message = channel.select({ mailbox:case_receive(), time.after("2s"):case_receive() })
+            local blocked, block_err = writer:call(BLOCK_FN_ID, {
+                input = { content = "notification from Block" },
+            })
+            local block_message = channel.select({ mailbox:case_receive(), time.after("2s"):case_receive() })
+            process.registry.unregister("starter.notifications")
+            process.unlisten(mailbox)
+
+            test.is_nil(write_err)
+            test.is_true(written.success, tostring(written.error and written.error.message))
+            test.is_nil(block_err)
+            test.not_nil(blocked.entry_id)
+            test.eq(sink_message.channel, mailbox, "sink write must notify through the realtime contract")
+            test.eq(block_message.channel, mailbox, "Block write must notify through the realtime contract")
+            test.eq(sink_message.value.topic, "acme.starter.changed")
+            test.eq(block_message.value.topic, "acme.starter.changed")
+            test.eq(sink_message.value.count, before + 1, "notification follows the committed insert")
+            test.eq(block_message.value.count, before + 2, "notification follows the committed insert")
+            test.eq(next(sink_message.value.data), nil, "notification contains no stored content")
+        end)
+
         test.it("publishes the log port bound to the writable sink", function()
             local entry, err = registry.get(PORT_ID)
             test.is_nil(err)

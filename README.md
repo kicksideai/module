@@ -12,10 +12,15 @@ Create a repository from [this template](https://github.com/kicksideai/module/ge
 ```sh
 make init ORG=your-org MODULE_NAME=your-module TITLE="Your module"
 make setup
-make lint typecheck build test
+make lint typecheck build test-ui test
 ```
 
 `make init` also accepts `NAMESPACE`, `TAG`, and `GITHUB_OWNER` (default: `ORG`). It runs once per checkout. Commit the rebuilt `static/` bundle with your source changes.
+
+The sink and Block announce committed writes on `acme.starter.changed` through
+the host's `kickside.contract:realtime` binding. The page refetches its status
+endpoint on that topic and when the host shows the retained component again.
+`make test-ui` checks notification refresh, return visits, and overlapping reads.
 
 Run the PostgreSQL suite before changing SQL or migrations. `make postgres-up` starts PostgreSQL on port 5433 with an empty test database:
 

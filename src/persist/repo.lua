@@ -2,11 +2,27 @@
 local sql = require("sql")
 local registry = require("registry")
 local uuid = require("uuid")
+local contract = require("contract")
 
 -- The target_db requirement writes the host database resource ID here.
 local DB_CONFIG = "acme.starter.persist:db_config"
 
 local repo = {}
+
+local function notify_changed()
+    local definition, definition_err = contract.get("kickside.contract:realtime")
+    if definition_err then return definition_err end
+    if not definition then return "realtime contract is unavailable" end
+    local realtime, open_err = definition:open()
+    if open_err then return open_err end
+    if not realtime then return "realtime binding is unavailable" end
+    local result, broadcast_err = realtime:broadcast({ topic = "acme.starter.changed", data = {} })
+    if broadcast_err then return broadcast_err end
+    if type(result) ~= "table" or result.success ~= true then
+        return "starter notification refused: " .. tostring(type(result) == "table" and result.error or "no result")
+    end
+    return nil
+end
 
 function repo.db_id(): (string?, error?)
     local entry, err = registry.get(DB_CONFIG)
@@ -34,7 +50,7 @@ end
 
 -- Insert one log entry. Returns the generated row id.
 function repo.insert(label, content)
-    return with_db(function(db)
+    local id, err = with_db(function(db)
         local id = uuid.v7()
         local _, err = db:execute(
             "INSERT INTO acme_starter_log_entries (id, label, content) VALUES ($1, $2, $3)",
@@ -42,10 +58,14 @@ function repo.insert(label, content)
         if err then return nil, err end
         return id
     end)
+    if err then return nil, err end
+    local notify_err = notify_changed()
+    if notify_err then return nil, notify_err end
+    return id
 end
 
 function repo.deliver(label, content, origin, sink_op, key)
-    return with_db(function(db)
+    local delivery, err = with_db(function(db)
         local rows, insert_err = db:query([[
             INSERT INTO acme_starter_log_entries (id, label, content, origin, sink_op, idempotency_key)
             VALUES ($1, $2, $3, $4, $5, $6)
@@ -68,6 +88,12 @@ function repo.deliver(label, content, origin, sink_op, key)
         end
         return { id = row.id, label = row.label, created = false }
     end)
+    if err then return nil, err end
+    if not delivery.conflict then
+        local notify_err = notify_changed()
+        if notify_err then return nil, notify_err end
+    end
+    return delivery
 end
 
 -- Number of log entries written so far.

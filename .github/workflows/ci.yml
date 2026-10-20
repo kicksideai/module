@@ -131,6 +131,8 @@ jobs:
         make check check-handbook
     - name: Build, lint and Lua module tests
       run: ${{ matrix.commands }}
+    - name: Test starter page refresh
+      run: make test-ui
     - name: Check committed static bundle freshness
       run: git diff --exit-code -- static/
     defaults:

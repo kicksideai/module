@@ -13,3 +13,6 @@ entries:
     imports:
       repo: acme.starter.persist:repo
     method: write
+    security:
+      policies:
+        - acme.starter.persist:status_broadcast

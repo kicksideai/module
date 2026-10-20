@@ -1,6 +1,6 @@
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('init', 'setup', 'check', 'build', 'dev', 'lint', 'typecheck', 'test', 'test-pg', 'postgres-up', 'postgres-down', 'sync-handbook', 'check-handbook', 'verify', 'release-check', 'publish')]
+    [ValidateSet('init', 'setup', 'check', 'build', 'dev', 'lint', 'typecheck', 'test-ui', 'test', 'test-pg', 'postgres-up', 'postgres-down', 'sync-handbook', 'check-handbook', 'verify', 'release-check', 'publish')]
     [string]$Target = 'verify',
     [string]$Organization,
     [string]$ModuleName,
@@ -70,6 +70,7 @@ function Invoke-TestRunner {
         Pop-Location
     }
 }
+function Invoke-TestUi { Invoke-Checked npm @('--prefix', 'ui', 'test') }
 function Invoke-Test { Invoke-TestRunner @('test') }
 function Invoke-TestPg { Invoke-TestRunner @('test', '--profile', 'postgres') }
 function Invoke-Verify {
@@ -78,6 +79,7 @@ function Invoke-Verify {
     Invoke-Lint
     Invoke-Typecheck
     Invoke-Build
+    Invoke-TestUi
     Invoke-Test
 }
 function Invoke-SyncHandbook {
@@ -95,6 +97,7 @@ switch ($Target) {
     'dev' { Invoke-Checked npm @('--prefix', 'ui', 'run', 'dev') }
     'lint' { Invoke-Lint }
     'typecheck' { Invoke-Typecheck }
+    'test-ui' { Invoke-TestUi }
     'test' { Invoke-Test }
     'test-pg' { Invoke-TestPg }
     'postgres-up' { Invoke-Checked docker @('compose', '-f', 'compose.test.yaml', 'up', '-d', '--wait') }
