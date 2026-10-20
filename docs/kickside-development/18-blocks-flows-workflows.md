@@ -78,6 +78,12 @@ The function receives exactly `{ input, config }`. Its declaration is closed:
 unknown fields fail validation. A `failed` port and `error` schema must be
 declared together.
 
+A Block with no settings declares `config` as
+`{ type: object, additionalProperties: false }` and leaves `properties` out.
+The runtime hands an empty `properties: {}` map to the config validator as a
+JSON array, so every Workflow that uses such a Block fails to publish with
+`unable to unmarshal JSON array into Go map[string]*jsonschema.Schema within "/properties"`.
+
 Public registry tools are projected as virtual Blocks by `kickside/blocks`.
 Their function id and JSON schemas stay authoritative; do not duplicate a tool
 as a second Block declaration.
