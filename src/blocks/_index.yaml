@@ -67,3 +67,6 @@ entries:
     imports:
       repo: acme.starter.persist:repo
     modules: []
+    security:
+      policies:
+        - acme.starter.persist:status_broadcast

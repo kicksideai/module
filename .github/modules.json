@@ -19,6 +19,7 @@
         "dev",
         "lint",
         "typecheck",
+        "test-ui",
         "test",
         "test-pg",
         "postgres-up",

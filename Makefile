@@ -10,7 +10,7 @@ VERSION ?= $(shell node -p "require('./.release-please-manifest.json')['.']")
 SHELL := bash
 .SHELLFLAGS := -o pipefail -ec
 
-.PHONY: init setup check build dev lint typecheck test test-pg postgres-up postgres-down sync-handbook check-handbook verify release-check publish
+.PHONY: init setup check build dev lint typecheck test-ui test test-pg postgres-up postgres-down sync-handbook check-handbook verify release-check publish
 init:
 	node scripts/init-module.mjs --organization "$(ORG)" --module "$(MODULE_NAME)" --title "$(TITLE)" $(if $(NAMESPACE),--namespace "$(NAMESPACE)",) $(if $(TAG),--tag "$(TAG)",) $(if $(GITHUB_OWNER),--github-owner "$(GITHUB_OWNER)",)
 setup:
@@ -33,6 +33,8 @@ lint:
 	wippy lint
 typecheck:
 	npm --prefix ui run type-check
+test-ui:
+	npm --prefix ui test
 # The runner exits 0 when it discovers zero tests, which turns a broken
 # discovery setup into a false-green run. An empty discovery is always a
 # defect here — the template ships suites — so both targets fail on it.
@@ -51,7 +53,7 @@ check-handbook:
 verify:
 	$(MAKE) setup
 	$(MAKE) lint typecheck build
-	$(MAKE) check test
+	$(MAKE) check test-ui test
 release-check: verify
 	wippy auth status
 	wippy publish --version "$(VERSION)" --dry-run --create --module-visibility $(VIS) --module-type $(TYPE) $(EMBED)

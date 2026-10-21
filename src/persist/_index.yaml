@@ -18,3 +18,13 @@ entries:
       - sql
       - registry
       - uuid
+      - contract
+
+  - name: status_broadcast
+    kind: security.policy
+    meta:
+      private: true
+    policy:
+      resources: kickside.realtime:acme.starter.changed
+      actions: realtime.broadcast
+      effect: allow

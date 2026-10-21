@@ -22,11 +22,53 @@ entries:
       group: Acme Starter
       suite: acme_starter
     source: file://log_test.lua
-    modules: [funcs, registry, security, channel, time, uuid]
+    modules: [funcs, registry, security, channel, time, uuid, process]
     imports:
       test: wippy.test:test
       repo: acme.starter.persist:repo
     method: run
+
+  - name: realtime_broadcast
+    kind: function.lua
+    source: file://realtime_fixture.lua
+    method: broadcast
+    modules: [process, security]
+    imports:
+      repo: acme.starter.persist:repo
+    security:
+      policies: [app:notification_transport]
+
+  - name: notification_transport
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: writer
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [access, db.get, registry.get, registry.find, contract.get, contract.open, contract.call,
+        contract.implementations, contract.security, funcs.call, funcs.security]
+      effect: allow
+
+  - name: realtime_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:realtime
+        default: true
+        methods:
+          broadcast: app:realtime_broadcast
+          notify: app:realtime_notify
+
+  - name: realtime_notify
+    kind: function.lua
+    source: file://realtime_fixture.lua
+    method: notify
+    modules: [process, security]
+    imports:
+      repo: acme.starter.persist:repo
 
   - name: wiring_test
     kind: function.lua
