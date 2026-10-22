@@ -55,19 +55,19 @@ if (/--p-(red|green|blue|orange|yellow|purple|pink|sky|emerald)-\d+/i.test(style
 if (!viteConfig.includes("'process.env.NODE_ENV'")) report("vite.config.ts must define 'process.env.NODE_ENV' for the lib build")
 if (!viteConfig.includes("'process.env': '{}'")) report("vite.config.ts must define 'process.env': '{}' as the fallback shim")
 
-// The shell serves these through its import map; a bundled copy bloats the
-// artifact, duplicates framework state, and reintroduces process.env reads
-// the define shim cannot reach inside prebuilt library dists.
-const shellProvidedPackages = ['vue', 'pinia', 'vue-router', 'axios', 'nanoevents', 'luxon', '@iconify/vue',
-  'iconify-icon', '@tanstack/vue-query', 'sanitize-html', 'markdown-it', 'markdown-it-async',
-  '@wippy-fe/proxy', '@wippy-fe/markdown-iframe']
+// A component loads in two documents: auto-registered elements in the top
+// document under the web-host import map, and surfaces inside the shell frame
+// under the shell import map. Only packages both maps serve may stay external;
+// a bundled copy of one of them duplicates framework state and reintroduces
+// process.env reads the define shim cannot reach inside prebuilt library
+// dists. Every other package, PrimeVue included, is bundled: the shell frame
+// maps a subset of primevue/* and the top document maps none.
+const hostProvidedPackages = ['vue', 'pinia', 'vue-router', 'axios', 'nanoevents', 'luxon', '@iconify/vue',
+  '@wippy-fe/proxy']
 const declaredDeps = Object.keys({ ...packageJson.dependencies, ...packageJson.devDependencies, ...packageJson.peerDependencies })
 for (const dep of declaredDeps) {
-  if (shellProvidedPackages.includes(dep) && !viteConfig.includes(`'${dep}'`)) {
-    report(`ui/package.json declares ${dep}, which the shell import map provides; add it to rollupOptions.external in vite.config.ts`)
-  }
-  if (dep.startsWith('primevue') && !/\^primevue\\\//.test(viteConfig) && !viteConfig.includes('primevue/')) {
-    report('primevue components must stay external (external: [/^primevue\\//]); the surface import map serves them')
+  if (hostProvidedPackages.includes(dep) && !viteConfig.includes(`'${dep}'`)) {
+    report(`ui/package.json declares ${dep}, which every host import map provides; add it to rollupOptions.external in vite.config.ts`)
   }
 }
 
@@ -96,6 +96,40 @@ if (!await exists(staticMetaPath)) {
   }
 }
 if (!await exists(resolve(root, 'static/index.js'))) report('static/index.js is missing; run make build')
+
+// The emitted bundle is what the browser resolves: a bare specifier outside
+// hostProvidedPackages has no import map entry in at least one document and
+// fails the whole module graph there. Rollup hoists every static import of an
+// ES chunk ahead of its other statements and emits re-exports and dynamic
+// imports of externals with their literal specifier, so reading those forms
+// covers every module request the chunk makes.
+const leadingTrivia = /^(?:\s+|\/\*[\s\S]*?\*\/|\/\/[^\n]*)*/
+const staticImport = /^import\s*(?:[\w$\s{},*]+?\s*from\s*)?(["'])([^"'\n]+)\1\s*;?/
+const reExport = /^export\s*(?:\*\s*(?:as\s+[\w$]+\s*)?|\{[^}]*\}\s*)from\s*(["'])([^"'\n]+)\1/gm
+const dynamicImport = /\bimport\(\s*(["'])([^"'\n]+)\1\s*\)/g
+const packageSpecifier = /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*(?:\/[\w.-]+)*$/i
+function moduleRequests(source) {
+  const requests = new Set()
+  let rest = source
+  for (;;) {
+    rest = rest.slice(rest.match(leadingTrivia)[0].length)
+    const statement = rest.match(staticImport)
+    if (!statement) break
+    requests.add(statement[2])
+    rest = rest.slice(statement[0].length)
+  }
+  for (const match of source.matchAll(reExport)) requests.add(match[2])
+  for (const match of source.matchAll(dynamicImport)) requests.add(match[2])
+  return requests
+}
+const staticFiles = await exists(resolve(root, 'static')) ? await walk(resolve(root, 'static')) : []
+for (const file of staticFiles.filter((path) => extname(path) === '.js')) {
+  for (const request of moduleRequests(await readFile(file, 'utf8'))) {
+    if (packageSpecifier.test(request) && !hostProvidedPackages.includes(request)) {
+      report(`${relative(root, file)} imports ${request}, which the host import maps do not provide in every document; bundle it`)
+    }
+  }
+}
 
 const yamlFiles = (await walk(resolve(root, 'src'))).filter((path) => /\.ya?ml$/.test(path))
 for (const file of yamlFiles) {
