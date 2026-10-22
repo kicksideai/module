@@ -2,8 +2,8 @@
 
 Follow the [organization contribution guide](https://github.com/kicksideai/.github/blob/main/CONTRIBUTING.md),
 [Code of Conduct](https://github.com/kicksideai/.github/blob/main/CODE_OF_CONDUCT.md), and
-[CLA](https://github.com/kicksideai/.github/blob/main/CLA.md). Send the signed CLA privately to
-[licensing@wippy.ai](mailto:licensing@wippy.ai) before merge.
+[CLA](https://github.com/kicksideai/.github/blob/main/CLA.md). The CLA check on your pull
+request explains how to sign.
 
 ## Development and testing
 
