@@ -35,7 +35,7 @@ jobs:
       with:
         fetch-depth: 0
         persist-credentials: false
-    - uses: kicksideai/.github/actions/legal-check@5e168263ac995d107c968af658b810e22788cb6a
+    - uses: kicksideai/.github/actions/legal-check@e1186b6a3f9aac84125b7d5300077b7b23a70804
       with:
         base: ${{ github.event.pull_request.base.sha }}
   modules:
