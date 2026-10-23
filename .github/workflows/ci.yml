@@ -27,6 +27,17 @@ env:
 jobs:
   secret-scan:
     uses: kicksideai/.github/.github/workflows/secret-scan.yml@5401fa65bed7d8648125957520e94206ed1ffd0b
+  legal-check:
+    name: Third-party notices and SPDX headers
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: kicksideai/.github/actions/legal-check@e1186b6a3f9aac84125b7d5300077b7b23a70804
+      with:
+        base: ${{ github.event.pull_request.base.sha }}
   modules:
     name: ${{ matrix.module }} / ${{ matrix.engine }}
     runs-on: ubuntu-24.04
