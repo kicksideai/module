@@ -72,20 +72,18 @@ events.
 
 ## KB Public Meta
 
-KB public meta should represent the component-level render snapshot:
+The knowledge registry initializes the component-level render snapshot with:
 
-- `status`
-- `last_error`
-- `document_count`
-- `chunk_count`
-- `image_count`
-- `concept_count`
-- `last_ingested_at`
-- `last_materialized_at`
+- `status = "ready"`
+- `kb_type` from the selected engine
+- `auto_summary = ""` and `auto_description = ""`
+- `embedding_count`, `document_count`, `concept_count`, `chunk_count`,
+  `summary_count`, and `claim_count`, each set to zero
 
-The owner should be one KB component-state projection or one clearly-owned
-component-state path. Domain helpers should not all recompute stats and call
-`set_meta` independently.
+The engine owns subsequent updates to this snapshot. Its component-state
+projection or another clearly owned component-state path maintains the public
+meta that its views and declared stats consume. Domain helpers should not all
+recompute stats and call `set_meta` independently.
 
 ## Uploads
 
