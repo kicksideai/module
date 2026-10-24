@@ -41,13 +41,62 @@ focus CSS. The module must not hardcode focus colors or lengths.
 
 ## Read and refresh state
 
-Use named getters from `@wippy-fe/proxy` for authenticated HTTP and host
-events. Read committed state from a module endpoint. A `component.<id>`
-notification is a wakeup: refetch the endpoint or invalidate the relevant
-query cache, then render the returned state. `on(topic, handler)` returns a
-disposer; call it on unmount. Track the selected component ID so a board does
-not apply a notification from another workspace. The proxy API's current
-subscription and visibility rules are authoritative.
+Use named exports from `@wippy-fe/proxy` for authenticated HTTP and host
+events. Read committed state from a module endpoint. Notifications wake the
+page to refetch that endpoint or invalidate its query cache; render the
+returned state rather than treating a notification payload as the database.
+
+For component-owned state, subscribe to `component.<id>` and track the
+selected component ID so a board does not apply another workspace's events.
+The component service publishes canonical notifications such as
+`component.meta.changed` when its public metadata changes.
+
+A module page without a component instance uses a module-owned topic, such
+as `acme.starter.changed`. After committing a write, publish through
+`kickside.contract:realtime`: open the contract and call
+`broadcast({ topic = "acme.starter.changed", data = {} })` for shared state,
+or `notify({ user_id = owner_id, topic = topic, data = {} })` for one owner's
+state. Choose the audience from stored ownership, keep stored content out of
+wakeup payloads, and return contract or delivery errors. The writer declares
+only the authority its audience requires: a shared-topic broadcast uses a
+function security policy with action `realtime.broadcast` and resource
+`kickside.realtime:acme.starter.changed`. Do not call the relay directly.
+Every write entry point uses the same persistence and notification path.
+
+The shell can retain a page's custom element while navigating away and back.
+`onMounted` alone therefore does not refresh a page on later visits. Inside a
+`WippyVueElement`, use `useHostVisibilityRefresh` from
+`@wippy-fe/webcomponent-vue` for the initial load and each host-owned
+`false -> true` visibility transition:
+
+```ts
+import { onUnmounted } from 'vue'
+import { api, on } from '@wippy-fe/proxy'
+import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
+
+async function load() {
+  const { data } = await api.get('/api/v1/starter/status')
+  // Validate and render the endpoint response.
+}
+
+const unsubscribe = on('acme.starter.changed', () => { void load() })
+useHostVisibilityRefresh(load)
+onUnmounted(unsubscribe)
+```
+
+Subscribe before the initial read so a write during loading cannot fall
+between reading and subscribing. `on(topic, handler)` returns a disposer;
+call it on unmount. Keep subscriptions outside the visibility callback so
+return visits do not duplicate them. The helper serializes its own loads;
+the page also cancels or ignores obsolete responses from overlapping
+notification loads and responses arriving after unmount.
+
+Direct web components receive logical visibility through
+`useHostVisibility()` (`Ref<boolean | null>`); `null` means unmanaged. The
+initial value is not a reveal transition. Iframe pages use the proxy's
+`on('@visibility', handler)` event. Use these host APIs rather than polling,
+DOM visibility guesses, or browser reloads. The current proxy and
+web-component subscription and visibility contracts remain authoritative.
 
 A navigation action inside a shadow root emits `navigate` with a route path;
 `bubbles: true` and `composed: true` let the shell receive it:

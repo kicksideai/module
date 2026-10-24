@@ -20,7 +20,11 @@ Dependencies are `ns.dependency` entries in source with `component:
 organization/module` and `version: "*"` or a `>=` compatibility range.
 The root module lock is generated and untracked. Only the application lock
 pins resolved versions; module dependency declarations use `*` or `>=` ranges,
-never exact pins. One root `ns.definition` owns the namespace.
+never exact pins. The application declares explicit `>=` minimums from its verified
+published dependency baseline, so fresh installs can select newer compatible Hub
+versions without waiting for another app release. The installed lock records that
+resolved graph; restarting an existing installation does not update it implicitly.
+One root `ns.definition` owns the namespace.
 A `ns.requirement` states a resource the host must supply and rewrites exact
 target fields such as `.meta.target_db`, `.meta.router`, `.meta.server`, or
 policy `.groups +=`. Do not set a host-owned resource default in the module.
@@ -47,7 +51,12 @@ tag and publish its version to the Hub. Normal code merges do not publish.
 `make publish` points to this workflow. Configure the workflow's required
 GitHub and Hub credentials before releasing. Use the module's checked-in
 Makefile for its exact targets; never call package-manager or Vite build
-commands directly in a Wippy repository. Publish dependencies first so Hub
+commands directly in a Wippy repository. For the application, `make -C app
+release-check` builds the untracked main page, verifies its complete asset
+manifest and font references, and performs a dry-run pack. Application release
+publication uses `release-publish` from the exact Release Please tag and repeats
+the build and asset checks before uploading. The Release workflow runs this
+path with the encrypted `WIPPY_HUB_TOKEN` Actions secret. Publish dependencies first so Hub
 can resolve the module's graph. A release cannot be edited after publication;
 publish a new version for changes.
 

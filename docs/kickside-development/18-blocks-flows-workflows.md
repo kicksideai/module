@@ -126,6 +126,57 @@ This remains true when the wait is below an Agent node or nested Flow:
 assignment and the review item; Blocks/Dataflow own parking and signaling.
 Visual Workflows is not a dependency of the Inbox Block.
 
+### Inbox review fields
+
+`kickside.inbox:block.review` receives the object to review as `input` and requires
+`config.prompt`. Without `title_expr`, the prompt remains the Inbox item title.
+An optional `title_expr` derives a title for each item, including each iteration
+of a For each. When it differs from the title, the prompt appears above the
+reviewed facts. The expression uses the same Wippy expression language as Automation expression
+transforms, with `input` bound to the reviewed object; there is no string template
+syntax. The expression must return a non-empty string.
+
+`config.form` is an optional JSON Schema object. Each property can declare a
+`default_expr` using that same `input` environment. The Inbox arm evaluates it
+once when creating the review and stores its result as the property's `default`
+in the item schema. It overrides a static `default` only when explicitly declared;
+otherwise static defaults keep their existing behavior. Expression errors,
+missing results, and values that do not match the field's type or enum fail the
+arm. Expressions do not mutate the input or the configured schema.
+
+```yaml
+prompt: Review the follow-up and approve or reject it.
+title_expr: "'Follow-up: ' + input.deal.name"
+form:
+  type: object
+  required: [subject, body]
+  properties:
+    subject:
+      type: string
+      title: Subject
+      default_expr: input.email.subject
+    body:
+      type: string
+      title: Email draft
+      format: textarea
+      default_expr: input.email.body
+```
+
+String fields render as text inputs; `format: textarea` selects a multiline
+editor. Number/integer, boolean, and scalar enum fields retain their numeric,
+checkbox, and select controls. Enum options and defaults preserve their string,
+number, or boolean types through submission. The reviewed input and context remain read-only
+facts rendered by Inbox's `decision_content`; editable fields appear below them.
+
+Approval and rejection return `{outcome, form}` through the existing Block
+output. `form` contains the submitted values, including reviewer edits. A
+following step must read `output.form.subject` and `output.form.body` to use the
+approved email, rather than copying the original draft. For example, an edge
+transform can map `{subject: output.form.subject, body: output.form.body}` into
+the next Block's input. Approve routes through `then`; reject routes through
+`else`. Existing item metadata, persisted decisions, ports, and output shapes
+remain valid without migration.
+
 ## Workflow
 
 `kickside/workflows` is the optional visual authoring and lifecycle plugin.
