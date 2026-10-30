@@ -75,7 +75,7 @@ them to every member.
 
 ## Connect the policy to member groups
 
-The platform-owned Members group is
+The platform Member role uses the scope
 `kickside.security.groups:members`. A normal module declares its member-scope
 requirement with the canonical platform default and a declared value kind:
 
@@ -100,8 +100,8 @@ capability. Retain published requirement ids and targets when adding a policy,
 then append the new policy target. This lets an installation updated from an
 earlier release retain its existing binding.
 
-The default above is the platform Members group, not an application-owned host
-value. Other host requirements declare their `meta.value_kind` and receive their
+The default above selects the platform Member scope. Other host requirements
+declare their `meta.value_kind` and receive their
 resource from the host binding; module source does not set an `app:*` default.
 See [Settings And Environment](16-conventions.md#settings-and-environment) for
 that pattern.
@@ -115,10 +115,12 @@ own member-scope requirement as in the example.
 
 ## How access is evaluated
 
-An application composes its selected module policies into groups. The default
-Members group includes the platform Members group, while the signed-in baseline
-provides the shell, session, and own-profile capabilities. Administrators assign
-groups to users; a user's effective scope combines the policies from all of
+An application composes its selected module policies into roles. KickSide ships
+two default roles: Administrator and Member. Member uses the platform scope
+`kickside.security.groups:members`; the application adds its core capabilities
+to that role. Signed-in shell and own-profile access is supplied during
+authentication, without a separate User role or stored membership. Administrators
+assign roles to users; a user's effective scope combines the policies from all of
 their groups. A deny takes precedence over an allow.
 
 The same scope controls registry discovery, navigation, pages, views, contract

@@ -114,6 +114,14 @@ registered routes. Do not construct raw postMessage protocols or deployment
 paths. Inspect the top document, iframe documents, and recursively nested
 shadow roots when verifying overlays such as Dialog and Drawer.
 
+A surface can request Back within a subsection by emitting
+`{ path: 'base-id', back: { within: 'base-id' } }`. Both paths resolve under
+the surface base. The shell uses its existing router to go Back only when
+the current and previous entries are within that subsection. A direct link
+or a previous entry outside the subsection opens `path` instead. Components
+must not inspect the parent window's history: the shell owns routing and
+may run in an iframe on another origin.
+
 ## Verify in the running app
 
 Keep the configured backend port listening. For a 5xx, inspect backend logs
