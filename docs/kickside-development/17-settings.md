@@ -346,6 +346,23 @@ A single definition may also carry `ui: <tag>`: the generic form mounts
 that tag for just that one field, handing it a config slice. The plumbing
 is complete; no shipping definition uses it yet.
 
+A definition may instead declare a shared **value control**. Settings binds the
+current draft to its `value` attribute and consumes its `select` event detail.
+The control edits only the draft; the ordinary Save button, validation,
+provenance, overrides, and reset-to-default continue through Settings.
+
+```yaml
+control:
+  tag: wc-model-picker
+  props:
+    capability: vision
+```
+
+`control` is optional. `props` contains the control's static attributes; Settings
+owns `value`. Use `ui` for an editor that saves itself, or `control` for a shared
+picker used by the ordinary form. Shared model selection uses `wc-model-picker`
+with capability filters, so modules do not create their own model selectors.
+
 ## The Settings Contract
 
 `kickside.settings:settings` (`platform/settings/src/_index.yaml`) has five
