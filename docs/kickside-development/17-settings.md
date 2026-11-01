@@ -398,13 +398,17 @@ end
 
 Writes are admin-gated in two layers:
 
-1. App-owned endpoint firewall: `app.security:user` has no
-   `kickside.settings.api:*` access; `app.security:admin` does. Handlers do
-   no in-code permission checks.
+1. The host's endpoint firewall evaluates `access` on the requested endpoint.
+   The default Member role (`kickside.security.groups:members`) has no Settings
+   administration endpoint grant; Administrator (`app.security:admin`) does.
+   Delegating Settings administration requires explicit endpoint grants;
+   module registry and contract access alone do not grant HTTP access. See
+   [Security and module access](23-security-and-module-access.md).
 2. The contract repeats the boundary so direct calls cannot bypass the
    firewall: `set`/`unset` require an authenticated actor with `access` to
    `kickside.settings.api:put_settings.endpoint`, `list` requires
-   `kickside.settings.api:list_settings.endpoint`. Non-admin callers get
+   `kickside.settings.api:list_settings.endpoint`. Callers without the
+   corresponding grant get
    exactly `"admin settings write access is required"` (set/unset) and
    `"admin settings list access is required"` (list). The writer also
    requires a non-empty `actor_id` for the audit `updated_by`.
