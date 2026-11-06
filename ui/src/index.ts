@@ -1,7 +1,7 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
+import { lazyPage } from './lazy'
 import type { ComponentProps } from './types.ts'
-import Starter from './app/starter.vue'
 import stylesText from './styles.css?inline'
 import pkg from '../package.json'
 
@@ -15,7 +15,13 @@ class AcmeStarterElement extends WippyVueElement<ComponentProps, Record<string, 
   }
 
   static get vueConfig() {
-    return { rootComponent: Starter }
+    return {
+      lazyConfig: lazyPage(
+        () => import('./lazy-mount').then((module) => module.mountConfig),
+        'Could not load this page. Reload the page to try again.',
+        useEvents,
+      ),
+    }
   }
 }
 
