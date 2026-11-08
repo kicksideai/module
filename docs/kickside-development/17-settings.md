@@ -465,10 +465,10 @@ change in a module upgrade propagates immediately, and reset-to-default is
 literally deleting the row (`unset`). Never store the default as an
 override.
 
-Reads are served from a boot-warmed `store.memory` cache. A cold cache is a
-loud error - `"settings cache is not warmed"` - not a silent DB reload.
-Consumers reading at boot must start after the cache-warm barrier or fail
-clearly; they must not switch to a second DB/env read path.
+Reads are served from a `store.memory` cache warmed at boot. A cold cache is
+normal, because a hot module update can replace the store: the read reloads from
+the DB and fills the empty cache. It returns an error only when that reload
+fails, and it never returns partial data.
 
 ## Gotchas
 
