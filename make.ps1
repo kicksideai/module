@@ -14,6 +14,7 @@ param(
     [string]$HandbookRef = 'main',
     [ValidateSet('private', 'public')][string]$Visibility = 'private',
     [string]$Version,
+    [string]$Python,
     [Parameter(ValueFromRemainingArguments=$true)][string[]]$MakeArgs
 )
 $ErrorActionPreference = 'Stop'
@@ -31,7 +32,8 @@ if ($env:WIPPY_BIN) {
 }
 # An explicit shell keeps native Windows make from falling back to cmd.exe.
 # Make itself preserves each target's prerequisites, working folder and exit code.
-$variables = @("HANDBOOK_REF=$HandbookRef", "VIS=$Visibility")
+if (-not $Python) { $Python = (Get-Command python.exe -ErrorAction Stop).Source }
+$variables = @("HANDBOOK_REF=$HandbookRef", "VIS=$Visibility", "PYTHON=$Python")
 if ($Target -eq 'init' -and (-not $Organization -or -not $ModuleName -or -not $Title)) {
     throw 'init requires -Organization, -ModuleName, and -Title'
 }

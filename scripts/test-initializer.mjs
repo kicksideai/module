@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { dirname, resolve } from 'node:path'
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { dirname, relative, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { initialize } from './init-module.mjs'
 
@@ -18,12 +17,17 @@ if (rootConfig.initialized) {
   process.exit(0)
 }
 
-const target = await mkdtemp(resolve(tmpdir(), 'kickside-module-init-'))
-
-await cp(root, target, {
-  recursive: true,
-  filter: (source) => !['.git', '.wippy', '.local', 'node_modules'].some((name) => source.split(/[\\/]/).includes(name)),
-})
+const tempRoot = resolve(root, '.local/tmp')
+await mkdir(tempRoot, { recursive: true })
+const target = await mkdtemp(resolve(tempRoot, 'tmp-module-init-'))
+const excluded = new Set(['.git', '.wippy', '.local', 'node_modules'])
+for (const name of await readdir(root)) {
+  if (excluded.has(name)) continue
+  await cp(resolve(root, name), resolve(target, name), {
+    recursive: true,
+    filter: source => !relative(root, source).split(/[\\/]/).some(part => excluded.has(part)),
+  })
+}
 
 const args = [
   '--organization', 'orbit', '--module', 'tasks', '--title', 'Orbit Tasks',
@@ -50,11 +54,11 @@ const originalPackage = await readFile(packagePath, 'utf8')
 const editedPackage = JSON.parse(originalPackage)
 editedPackage.wippy.description += ' Updated module description.'
 await writeFile(packagePath, `${JSON.stringify(editedPackage, null, 2)}\n`)
-const staleCheck = spawnSync(process.execPath, ['scripts/check-module.mjs'], { cwd: target, encoding: 'utf8' })
+const staleCheck = spawnSync(process.execPath, ['scripts/check-module.mjs'], { cwd: target, encoding: 'utf8', windowsHide: true })
 assert.equal(staleCheck.status, 1, 'check must reject stale bundle metadata')
 assert.match(staleCheck.stderr, /static\/wippy-meta\.json is stale/)
 
-const verify = execFileSync('make', ['--dry-run', 'verify'], { cwd: target, encoding: 'utf8' })
+const verify = execFileSync('make', ['--dry-run', 'verify'], { cwd: target, encoding: 'utf8', windowsHide: true })
 const buildIndex = verify.indexOf('npm --prefix ui run build')
 const checkIndex = verify.indexOf('node scripts/check-module.mjs')
 assert.ok(buildIndex >= 0 && checkIndex > buildIndex, 'verify must build before checking bundle freshness')
@@ -71,7 +75,7 @@ async function checkWith(edits) {
     await writeFile(path, edit(original))
   }
   try {
-    return spawnSync(process.execPath, ['scripts/check-module.mjs'], { cwd: target, encoding: 'utf8' })
+    return spawnSync(process.execPath, ['scripts/check-module.mjs'], { cwd: target, encoding: 'utf8', windowsHide: true })
   } finally {
     for (const [path, original] of originals) await writeFile(path, original)
   }
@@ -116,4 +120,5 @@ assert.equal(sharedWrapper.status, 1, 'check must reject a build that leaves the
 assert.match(sharedWrapper.stderr, /keep the wrapper in its own chunk/)
 
 console.log('Initializer test passed')
+if (!resolve(target).startsWith(tempRoot + sep)) throw new Error('Initializer fixture is outside its temporary root')
 await rm(target, { recursive: true, force: true })

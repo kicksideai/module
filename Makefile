@@ -4,6 +4,7 @@ TYPE   := plugin
 VIS    := private
 EMBED  := --embed ui_fs
 VERSION ?= $(shell node -p "require('./.release-please-manifest.json')['.']")
+PYTHON ?= python3
 
 # pipefail lets the test targets both stream runner output and keep its exit
 # code while grepping the log afterwards.
@@ -21,9 +22,9 @@ check:
 	node scripts/check-module.mjs
 	node scripts/test-initializer.mjs
 	node .github/scripts/test_release_workflow.mjs
-	python3 -B .github/scripts/test_delivery.py
-	python3 -B .github/scripts/test_dispatch_release_ci.py
-	python3 -B .github/scripts/test_release_baseline.py
+	"$(PYTHON)" -B .github/scripts/test_delivery.py
+	"$(PYTHON)" -B .github/scripts/test_dispatch_release_ci.py
+	"$(PYTHON)" -B .github/scripts/test_release_baseline.py
 	node .github/scripts/test_release_dry_run.cjs
 build:
 	npm --prefix ui run build
