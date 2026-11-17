@@ -102,6 +102,27 @@ The remaining size limits are `max_row_bytes`, `prepared_bytes_per_item`, and
 the kind declares them. A disabled or unhealthy drive is visible through its
 owner; it is never repaired by an app-side polling loop.
 
+Kickside enables Dataflow diagnostic retention by default, including after an
+application update and restart. The dependency parameters set
+`userspace.dataflow:retention_enabled` to `true` and
+`userspace.dataflow:retention_batch_size` to `1000`; the engine defaults remain
+30 days for `userspace.dataflow:diagnostic_retention_days` and 3600 seconds for
+`userspace.dataflow:retention_interval_seconds`.
+When every member of a terminal flow family has its last update older than the
+window, the engine deletes expired intermediate diagnostics (including node
+inputs and referenced step outputs) and eligible applied commits. Public flow
+inputs and final outputs, flow and node summaries, durable results, agent
+evidence, pending commits and the commit referenced by `last_commit_id` remain;
+active families and recent history remain intact. When a terminal run references
+missing step data, the inspector shows “Step data is no longer available” and,
+when retention is enabled with a positive window, “Step data is kept for N days.”
+The window is informational; the separate workflow run-summary retention policy
+still applies.
+The engine removes at most 1,000 rows per table per hour from `dataflow_data` and
+`dataflow_commits`, with an hour between completed passes, so eligible writes
+above that nominal ceiling outpace cleanup and execution or contention lowers
+actual throughput.
+
 ## Answer a round
 
 A `kickside.trigger:round_consumer` returns `delivered_items`, `skipped_items`,
