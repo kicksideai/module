@@ -46,7 +46,8 @@ if (typeof packageJson.wippy?.description !== 'string' || packageJson.wippy.desc
 if (!securityIndex.includes('default: kickside.security.groups:members')) report('user_security_scope must default to the platform Members group')
 if (/^\s*default:\s*app[:.]/m.test(rootIndex)) report('requirements must not default to a host-owned app resource; the host binds them')
 if (!securityIndex.includes('intent: module_access')) report('the module must publish a module_access policy')
-if (!viteConfig.includes('preserveEntrySignatures: false')) report('web-component build must preserve the entry ownership contract')
+if (!viteConfig.includes("preserveEntrySignatures: 'strict'")) report('web-component build must keep registration and webComponent() in the entry')
+if (!viteConfig.includes('manualChunks')) report('web-component build must keep the wrapper in its own chunk, so a lazy chunk never imports the entry back')
 if (/--p-(red|green|blue|orange|yellow|purple|pink|sky|emerald)-\d+/i.test(styles)) report('frontend uses a nonexistent color-named --p-* token')
 
 // Library builds don't auto-replace process.env; without the define shim any
@@ -56,20 +57,13 @@ if (!viteConfig.includes("'process.env.NODE_ENV'")) report("vite.config.ts must 
 if (!viteConfig.includes("'process.env': '{}'")) report("vite.config.ts must define 'process.env': '{}' as the fallback shim")
 
 // A component loads in two documents: auto-registered elements in the top
-// document under the web-host import map, and surfaces inside the shell frame
-// under the shell import map. Only packages both maps serve may stay external;
-// a bundled copy of one of them duplicates framework state and reintroduces
-// process.env reads the define shim cannot reach inside prebuilt library
-// dists. Every other package, PrimeVue included, is bundled: the shell frame
-// maps a subset of primevue/* and the top document maps none.
-const hostProvidedPackages = ['vue', 'pinia', 'vue-router', 'axios', 'nanoevents', 'luxon', '@iconify/vue',
-  '@wippy-fe/proxy']
-const declaredDeps = Object.keys({ ...packageJson.dependencies, ...packageJson.devDependencies, ...packageJson.peerDependencies })
-for (const dep of declaredDeps) {
-  if (hostProvidedPackages.includes(dep) && !viteConfig.includes(`'${dep}'`)) {
-    report(`ui/package.json declares ${dep}, which every host import map provides; add it to rollupOptions.external in vite.config.ts`)
-  }
-}
+// document and surfaces inside the shell frame. Both serve the complete Host
+// import map, so its pinned keys are the externals contract. A bundled copy of a
+// mapped package duplicates framework state and reintroduces process.env reads
+// the define shim cannot reach inside prebuilt library dists.
+const hostImportMap = JSON.parse(await readFile(resolve(root, 'ui/web-host.import-map.snapshot.json'), 'utf8'))
+const hostProvidedPackages = Object.keys(hostImportMap.imports)
+if (!viteConfig.includes('Object.keys(hostImportMap.imports)')) report('rollupOptions.external must come from the pinned Host import map')
 
 // The shell mounts page components in a definite-height surface whose every
 // ancestor hides overflow: a page that does not own its scrolling gets
