@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
@@ -6,22 +7,17 @@ import { defineConfig } from 'vite'
 
 const moduleRoot = fileURLToPath(new URL('.', import.meta.url))
 
-// Every document a component loads in serves these packages through its
-// import map: the top document (auto-registered elements) and the shell frame
-// (surfaces). They stay external so the bundle never ships its own copy (a
-// bundled copy both bloats the artifact and breaks on `process.env`
-// references in library code). Everything else is bundled, PrimeVue included:
-// the top document maps no primevue/* module.
-const hostProvided = [
-  'vue',
-  'pinia',
-  'vue-router',
-  'axios',
-  'nanoevents',
-  'luxon',
-  '@iconify/vue',
-  '@wippy-fe/proxy',
-]
+// Every document a component loads in serves the complete Host import map: the
+// top document (auto-registered elements) and the shell frame (surfaces). Its
+// pinned keys stay external so the bundle never ships its own copy (a bundled copy
+// both bloats the artifact and breaks on `process.env` references in library
+// code). Refresh the snapshot when the Host release changes.
+const hostImportMap = JSON.parse(readFileSync(resolve(moduleRoot, 'web-host.import-map.snapshot.json'), 'utf8')) as { imports: Record<string, string> }
+
+// The Host requests an entry with a ?declare-tag= query. A lazy chunk that imports the
+// entry back has no query, so it would load a second copy of the wrapper. Keeping the
+// wrapper in its own chunk leaves the entry with nothing a lazy chunk needs.
+const wcRuntimeChunk = (id: string) => (id.includes('/@wippy-fe/webcomponent-') ? 'wc-runtime' : undefined)
 
 export default defineConfig({
   plugins: [vue({ template: { compilerOptions: { isCustomElement: (t) => t.startsWith('wc-') } } }), wippyComponentPlugin()],
@@ -41,13 +37,14 @@ export default defineConfig({
     },
     rollupOptions: {
       input: { index: resolve(moduleRoot, 'src/index.ts') },
-      external: hostProvided,
+      external: Object.keys(hostImportMap.imports),
       output: {
+        manualChunks: wcRuntimeChunk,
         entryFileNames: '[name].js',
         chunkFileNames: '[name]-[hash].js',
         assetFileNames: '[name]-[hash][extname]',
       },
-      preserveEntrySignatures: false,
+      preserveEntrySignatures: 'strict',
     },
     sourcemap: true,
   },

@@ -82,27 +82,38 @@ const declarePrimeVue = (source) => {
   return `${JSON.stringify(manifest, null, 2)}\n`
 }
 
-const bundledPrimeVue = await checkWith({ 'ui/package.json': declarePrimeVue })
-assert.equal(bundledPrimeVue.status, 0, `check must accept a module that bundles PrimeVue:\n${bundledPrimeVue.stderr}`)
+const declaredPrimeVue = await checkWith({ 'ui/package.json': declarePrimeVue })
+assert.equal(declaredPrimeVue.status, 0, `check must accept a module that declares PrimeVue:\n${declaredPrimeVue.stderr}`)
 
 const externalPrimeVue = await checkWith({
   'ui/package.json': declarePrimeVue,
   'static/index.js': (source) => `import { default as Tabs } from "primevue/tabs";\n${source}`,
 })
-assert.equal(externalPrimeVue.status, 1, 'check must reject a bundle that imports PrimeVue from the import map')
-assert.match(externalPrimeVue.stderr, /static\/index\.js imports primevue\/tabs/)
+assert.equal(externalPrimeVue.status, 0, `check must accept a bundle that imports a mapped PrimeVue path:\n${externalPrimeVue.stderr}`)
 
-const surfaceOnlyImport = await checkWith({
-  'static/index.js': (source) => `import MarkdownIt from"markdown-it";\n${source}`,
+const unmappedImport = await checkWith({
+  'static/index.js': (source) => `import { spinner } from"@primevue/icons/spinner";\n${source}`,
 })
-assert.equal(surfaceOnlyImport.status, 1, 'check must reject a bare import the shell surface import map lacks')
-assert.match(surfaceOnlyImport.stderr, /static\/index\.js imports markdown-it/)
+assert.equal(unmappedImport.status, 1, 'check must reject a bare import the Host import map lacks')
+assert.match(unmappedImport.stderr, /static[\\/]index\.js imports @primevue\/icons\/spinner/)
 
-const bundledVue = await checkWith({
-  'ui/vite.config.ts': (source) => source.replace(/^\s*'vue',\n/m, ''),
+const curatedExternals = await checkWith({
+  'ui/vite.config.ts': (source) => source.replace('Object.keys(hostImportMap.imports)', "['vue']"),
 })
-assert.equal(bundledVue.status, 1, 'check must reject a declared host-provided package left out of rollupOptions.external')
-assert.match(bundledVue.stderr, /declares vue, which every host import map provides/)
+assert.equal(curatedExternals.status, 1, 'check must reject externals that do not come from the Host import map')
+assert.match(curatedExternals.stderr, /must come from the pinned Host import map/)
+
+const droppedFactory = await checkWith({
+  'ui/vite.config.ts': (source) => source.replace("preserveEntrySignatures: 'strict'", 'preserveEntrySignatures: false'),
+})
+assert.equal(droppedFactory.status, 1, 'check must reject a build that can drop webComponent() from the entry')
+assert.match(droppedFactory.stderr, /keep registration and webComponent\(\) in the entry/)
+
+const sharedWrapper = await checkWith({
+  'ui/vite.config.ts': (source) => source.replace('        manualChunks: wcRuntimeChunk,\n', ''),
+})
+assert.equal(sharedWrapper.status, 1, 'check must reject a build that leaves the wrapper in the entry')
+assert.match(sharedWrapper.stderr, /keep the wrapper in its own chunk/)
 
 console.log('Initializer test passed')
 await rm(target, { recursive: true, force: true })
