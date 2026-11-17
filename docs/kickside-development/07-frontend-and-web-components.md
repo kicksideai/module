@@ -59,6 +59,8 @@ Build settings:
 
 Inspect the emitted entry after building. It must contain its own `import.meta.url` and the `webComponent` export, and no chunk may import an entry file.
 
+The application shell takes Vue, pinia, vue-router, `@iconify/vue` and PrimeVue from the same Host import map snapshot. The shell and every surface it mounts therefore share one Vue, PrimeVue and Iconify instance, and the Tabler collection that the shell registers is available to every surface. The shell still vendors `@wippy-fe/proxy`, luxon, axios and nanoevents as lock-pinned local files (`app/frontend/applications/main/shell-vendor.mjs`).
+
 ## Read and refresh state
 
 Use named exports from `@wippy-fe/proxy` for authenticated HTTP and host
