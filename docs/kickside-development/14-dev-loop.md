@@ -52,7 +52,11 @@ wippy run -c \
 
 Bare `wippy run` reads the exact locked graph and does not resolve the Hub.
 Installed module updates use Keeper's Hub plan/install UI/API with `>=` ranges.
-Never edit `wippy.lock` to update modules. Use **System → Modules → Update all**, review the plan, apply it, and restart from the same installation directory. Module migrations update existing data as part of the Hub update; no separate data-conversion step is required.
+Never edit `wippy.lock` to update modules. For a published host with an older
+Keeper or Hub, follow the standalone update steps before using **Update all**.
+On a current host, use **System → Modules → Update all**, review the plan,
+apply it, and restart from the same installation directory. Module migrations
+update existing data as part of the Hub update. [Update older installations](15-publishing.md#update-older-installations)
 The base configuration stores registry history in `.wippy/registry.db`, and
 the SQLite profile stores application data under `.wippy/`; do not add a second
 history configuration.

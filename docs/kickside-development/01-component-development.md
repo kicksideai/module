@@ -360,6 +360,32 @@ materialization lives in `kickside.core.threads:provision`. Runtime business
 logic belongs in the component kind or projection, not in the autoinit
 declaration.
 
+To seed a provisioned component (default configuration, a first domain event),
+declare a projection with `on: lifecycle` on the kind. The component's
+creation appends `kickside.component.events:created` to its lifecycle thread
+and registers the projection there in the same transaction, so the worker runs
+once the component exists, under the framework system identity, as a durable
+projection job with the engine's retry and failure reporting. A system-scope
+component is created by the lifecycle boot after every bootloader has run, so
+a bootloader cannot seed it; its lifecycle projection can.
+
+```yaml
+      projections:
+        - kind: example.config.seed
+          on: lifecycle
+          worker_ref: "func://example.config:seed"
+          events:
+            input:
+              - type: kickside.component.events:created
+```
+
+The boot convergence (`provision.converge`, on start and after each install's
+migrations) registers a declared `on: lifecycle` projection that a component
+lacks, for example a kind that gains the projection after its components exist.
+The projection reads the lifecycle thread from its cursor, so it sees the
+`created` event while retention keeps it (default 90 days). The worker must be
+idempotent: a retried batch runs it again.
+
 ## Public Meta Projection Pattern
 
 Preferred pattern:

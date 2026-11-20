@@ -53,12 +53,39 @@ GitHub and Hub credentials before releasing. Use the module's checked-in
 Makefile for its exact targets; never call package-manager or Vite build
 commands directly in a Wippy repository. For the application, `make -C app
 release-check` builds the untracked main page, verifies its complete asset
-manifest and font references, and performs a dry-run pack. Application release
-publication uses `release-publish` from the exact Release Please tag and repeats
-the build and asset checks before uploading. The Release workflow runs this
-path with the encrypted `WIPPY_HUB_TOKEN` Actions secret. Publish dependencies first so Hub
-can resolve the module's graph. A release cannot be edited after publication;
-publish a new version for changes.
+manifest and font references, and performs a dry-run pack.
+
+For the KickSide repository, Release Please creates GitHub tags and release
+records. The hosted workflow builds and publishes ordinary releases to the Hub.
+
+To publish a qualified release using the exact archives recorded by the SQLite and PostgreSQL gates,
+retain the full evidence directory from the internal release gate. Run
+`sha256sum "$RELEASE_EVIDENCE/artifacts.json"` and add one Git trailer of the
+form `Hub-Artifact-Manifest-SHA256: <digest>` to the release PR's squash commit
+message. Use all 64 lowercase hexadecimal characters. For a CLI merge, supply
+the message body with `gh pr merge --squash --match-head-commit ... --body-file ...`.
+The release workflow reads the trailer from the exact tagged commit and skips
+hosted Hub publication for the whole cohort.
+
+From a clean checkout at that tag, verify the staged archives with the original
+evidence directory. Authenticate to the Hub with `wippy auth login` before running
+the publish command.
+
+```bash
+python3 scripts/publish-release-modules.py --repository . --evidence "$RELEASE_EVIDENCE" --verify-only
+python3 scripts/publish-release-modules.py --repository . --evidence "$RELEASE_EVIDENCE"
+```
+
+The publisher checks the tagged commit's parent and source tree against the
+verified release, verifies the manifest digest, and checks every archive against
+both engines' evidence before publishing. Both engines must have exercised an
+application archive. A companion marked `packed-only` has archive verification
+but no runtime coverage from that gate. The publisher uploads the archives in
+dependency order and publishes the application last when included. If publication
+stops partway through, rerun with the same tag and evidence. Matching Hub releases
+are reused and a digest conflict stops publication. Publish a new version to
+change a released archive.
+
 
 ## Install and update through KickSide Hub
 
@@ -76,7 +103,41 @@ channel; the app shell refreshes its catalog after those events
 (`app/frontend/applications/main/src/app/app.vue`). Do not install by copying
 source into the host or editing `wippy.lock` by hand.
 
-Use **System → Modules → Update all**, review the plan, apply it, and restart from the same installation directory. Module migrations update existing data as part of the Hub update; no separate data-conversion step is required.
+On a current installation, use **System → Modules → Update all** and restart
+from the same installation directory. Module migrations update existing data
+as part of the Hub update.
+
+### Update older installations
+
+On a published installation, open **System → Modules → Installed** and check
+the versions on the `keeper/keeper` and `kickside/hub` rows. A Modules page
+served by Hub 0.1.76 can submit App and Keeper in one **Update all** request.
+If Keeper 0.5.114 or 0.5.115 handles that request, it can replace existing
+host settings even when the new App declares newer dependency floors.
+
+The same prerequisite applies to updates through the Keeper HTTP API and the
+`hub_dependencies` MCP tool. Apply the Keeper update by itself, verify the
+active version, then request a fresh App plan. A combined request runs under
+the Keeper version that received it.
+
+1. When Keeper is earlier than 0.5.116, select **Scan updates**, then
+   **Update keeper/keeper** on its row. Wait for the standalone operation to
+   finish, reload the page, and confirm **Installed** lists Keeper 0.5.116 or newer. For an
+   authenticated API check, confirm `GET /api/v1/security/projection` returns
+   `current: true`.
+2. When Hub is earlier than 0.1.77, select **Scan updates**, then
+   **Update kickside/hub** on its row. Wait for the standalone operation to
+   finish, reload the page, and confirm **Installed** lists Hub 0.1.77 or newer.
+3. Before using **Update all**, preview the App plan through **Open update
+   planner for kickside/kickside** on the App row or through Keeper's Hub API.
+   Check that it preserves the installation's root bindings and configured
+   constraints. Leave the App update unapplied if its plan omits those settings.
+
+With the supported Keeper active, an App update compares each saved Facade
+`host_config_layout` and `host_custom_css` value with the installed release's
+default. Unset values and values that match that default adopt the new default.
+Customized values carry forward. In a layout without a chat panel, **New chat**
+opens the inline chat on the Sessions page.
 
 A release that retires a stored shape includes a forward-only, idempotent,
 resumable migration in the owning module, tested against the previous published
