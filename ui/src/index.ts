@@ -16,9 +16,15 @@ class AcmeStarterElement extends WippyVueElement<ComponentProps, Record<string, 
   }
 
   static get vueConfig() {
-    return {
-      ...lazyVueConfig(() => import('./lazy-mount').then((module) => module.mountConfig), { surface: 'page', loading: 'Loading…', failed: 'Could not load this page. Reload the page to try again.', timeout: 30000 }),
-    }
+    return lazyVueConfig(
+      () => import('./lazy-mount').then((module) => module.mountConfig),
+      {
+        surface: 'page',
+        loading: 'Loading…',
+        failed: 'Could not load this page. Reload the page to try again.',
+        timeout: 30000,
+      },
+    )
   }
 }
 

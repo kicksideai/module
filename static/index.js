@@ -13,9 +13,15 @@ class r extends o {
     };
   }
   static get vueConfig() {
-    return {
-      ...p(() => import("./lazy-mount-CAc038Oy.js").then((a) => a.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load this page. Reload the page to try again.", timeout: 3e4 })
-    };
+    return p(
+      () => import("./lazy-mount-CAc038Oy.js").then((a) => a.mountConfig),
+      {
+        surface: "page",
+        loading: "Loading…",
+        failed: "Could not load this page. Reload the page to try again.",
+        timeout: 3e4
+      }
+    );
   }
 }
 async function v() {
