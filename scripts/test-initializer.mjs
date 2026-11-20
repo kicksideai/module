@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { dirname, resolve } from 'node:path'
+import { dirname, relative, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { initialize } from './init-module.mjs'
 
@@ -19,10 +19,11 @@ if (rootConfig.initialized) {
 }
 
 const target = await mkdtemp(resolve(tmpdir(), 'kickside-module-init-'))
+const excluded = new Set(['.git', '.wippy', '.local', 'node_modules'])
 
 await cp(root, target, {
   recursive: true,
-  filter: (source) => !['.git', '.wippy', '.local', 'node_modules'].some((name) => source.split(/[\\/]/).includes(name)),
+  filter: (source) => !relative(root, source).split(sep).some((part) => excluded.has(part)),
 })
 
 const args = [

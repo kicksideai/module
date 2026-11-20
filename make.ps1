@@ -75,10 +75,10 @@ function Invoke-Test { Invoke-TestRunner @('test') }
 function Invoke-TestPg { Invoke-TestRunner @('test', '--profile', 'postgres') }
 function Invoke-Verify {
     Invoke-Setup
-    Invoke-Check
     Invoke-Lint
     Invoke-Typecheck
     Invoke-Build
+    Invoke-Check
     Invoke-TestUi
     Invoke-Test
 }
@@ -111,9 +111,7 @@ switch ($Target) {
         Invoke-Checked wippy @('publish', '--version', $Version, '--dry-run', '--create', '--module-visibility', $Visibility, '--module-type', 'plugin', '--embed', 'ui_fs')
     }
     'publish' {
-        Invoke-Verify
-        Invoke-Checked wippy @('auth', 'status')
-        Invoke-Checked wippy @('publish', '--version', $Version, '--dry-run', '--create', '--module-visibility', $Visibility, '--module-type', 'plugin', '--embed', 'ui_fs')
-        Invoke-Checked wippy @('publish', '--version', $Version, '--create', '--module-visibility', $Visibility, '--module-type', 'plugin', '--embed', 'ui_fs')
+        Invoke-Build
+        throw 'Releases use GitHub Release Please (.github/workflows/release.yml).'
     }
 }
