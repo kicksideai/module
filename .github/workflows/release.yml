@@ -123,7 +123,7 @@ jobs:
       run: python3 -m pip install PyYAML
     - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
       with:
-        version: 0.3.64a
+        version: 0.3.66a
         hub-url: https://hub.wippy.ai
     - name: Verify release PR CI
       env:

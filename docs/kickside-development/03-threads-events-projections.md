@@ -30,6 +30,28 @@ namespace belongs to the component kind's module. A component kind's
       methods: { get_status: kickside.core.threads:thread_status }
 ```
 
+A binding may set `meta.events.read: admin` to require component ADMIN for raw
+thread event reads, external-event lookups, pullables, and Core projection body
+reads, cursor listings, and catch-up progress. Reads use the current declaration
+of the thread's stored component kind. Adding or removing the field applies to
+existing threads of that kind as soon as the declaration changes. Thread metadata
+stays readable at READ. Realtime updates for `admin` threads, unresolved component
+links, and publishers without a matching source binding carry an invalidation.
+Clients refetch through the authorized read APIs.
+Omitting the field keeps READ, including for the generic `kickside.core:thread`
+kind and kinds absent from the registry. Invalid values produce a declaration
+error. The Threads contract requires WRITE
+and ADMIN to register or reconfigure a caller-selected projection on an `admin`
+thread. Pause and resume also require both grants. Each batch applies the live
+event read policy to the cursor's run-as identity before loading input. The
+built-in lifecycle reaper uses the system actor that owns its queue. Each
+catch-up observation uses the current policy and grants. Before a post-commit
+callback receives the fold's input, Core checks that its run-as identity can
+still read the source and that its declarations and cursor generation still match.
+A denied cursor becomes invalid with `thread_event_read_denied`. Once the identity
+can read the source, re-register without `reset` to continue from the saved
+position.
+
 An authenticated component writer may append its stored kind's declared input
 and output events. Component WRITE applies to owners, direct and group grantees,
 and inherited grants; WRITE does not require READ. Outputs marked `system_only:
@@ -39,11 +61,17 @@ or append reserved framework events. Every target in a batch is authorized befor
 insertion, and a denied target rolls back the batch. Plain Threads accept the
 input events declared by their stored kind.
 
+The HTTP message endpoint appends before reading back the committed message.
+On an `admin` thread, a WRITE grantee without ADMIN receives a committed,
+nonretryable HTTP 403 if the append succeeded and readback was denied. The
+message is already stored.
+
 `kickside.core:threads` is the public contract. `emit` ensures the thread at
 the component ID and appends its event; `append_event` and `append_events`
 accept explicit thread IDs and can batch multiple writes atomically. Use the
 current actor and scope of the caller. The `impl_id` selects the component
-kind's retention and projection declarations on first touch. Event `body` is
+kind's retention and projection declarations on first touch. For restricted
+threads, Core uses the attached component's kind for these declarations. Event `body` is
 JSON encoded by the writer. `trace_context` carries `trace_id`, `run_id`,
 `caused_by_event_id`, and `correlation_key` for downstream work. An external
 identity contains `external_source`, `external_id`, and optional
@@ -85,9 +113,12 @@ Malformed expectations return INVALID. A conflict in any entry of
 `append_event` accepts the same write-level `expect`.
 
 An exact retry whose every event matches an existing ID or external identity
-returns the stored duplicates and their original subject versions, even after
-the head or subject version advances. A sequence-only match with `expect`
-returns CONFLICT. Without `subject` or `expect`, append semantics stay unchanged.
+returns duplicates even after the head or subject version advances. Callers
+with event-read access receive the stored receipt. Other callers receive a
+duplicate indicator without the event ID, sequence, subject or version. A
+sequence-only match with `expect` returns CONFLICT. Explicit event IDs are
+deduplicated within the addressed thread, and an ID used by another thread
+produces a collision.
 
 ## Declare a projection worker
 
@@ -131,6 +162,8 @@ execution identity. Do not synthesize an actor or scope in the worker.
 
 A durable writer that needs projection acknowledgment can call
 `catch_up_projection({ thread_id = id, kind = kind, deadline = deadline })`.
+Pass `target_seq` to wait for a committed sequence. The default is the thread
+head sampled at entry, and a target above that head returns InvalidArgument.
 `deadline` is an RFC3339 instant; pass the enclosing job or round's work deadline
 so the blocking wait ends within its execution ceiling. The wait wakes the
 projection slot and observes its cursor; it does not execute the projection in

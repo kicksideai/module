@@ -2,7 +2,7 @@
 
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
-import { cpSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync } from 'node:fs'
+import { cpSync, lstatSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -41,7 +41,7 @@ function parseArgs(args) {
 }
 
 function git(args, cwd) {
-  const result = spawnSync('git', args, { cwd, stdio: 'inherit', env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }, windowsHide: true })
+  const result = spawnSync('git', args, { cwd, stdio: 'inherit', env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } })
   if (result.error) throw result.error
   if (result.status !== 0) throw new Error(`git ${args.join(' ')} failed with exit code ${result.status}`)
 }
@@ -94,9 +94,7 @@ function differences(expected, actual) {
 
 function main() {
   const { check, ref } = parseArgs(process.argv.slice(2))
-  const tempRoot = join(root, '.local', 'tmp')
-  mkdirSync(tempRoot, { recursive: true })
-  const workspace = mkdtempSync(join(tempRoot, 'tmp-handbook-sync-'))
+  const workspace = mkdtempSync(join(root, '.handbook-sync-'))
   try {
     const fetched = fetchHandbook(workspace, ref)
     if (check) {
@@ -111,7 +109,6 @@ function main() {
         console.log(`Handbook copy matches kicksideai/kickside@${ref}.`)
       }
     } else {
-      if (!resolve(destination).startsWith(root + '/') && !resolve(destination).startsWith(root + '\\')) throw new Error('Handbook destination is outside the module checkout')
       rmSync(destination, { recursive: true, force: true })
       cpSync(fetched, destination, { recursive: true, dereference: false, preserveTimestamps: true })
       const changed = differences(manifest(fetched), manifest(destination))
@@ -119,7 +116,6 @@ function main() {
       console.log(`Synced docs/kickside-development from kicksideai/kickside@${ref}.`)
     }
   } finally {
-    if (!resolve(workspace).startsWith(resolve(tempRoot) + '/') && !resolve(workspace).startsWith(resolve(tempRoot) + '\\')) throw new Error('Temporary handbook directory is outside the task workspace')
     rmSync(workspace, { recursive: true, force: true })
   }
 }
