@@ -52,7 +52,7 @@ instead of creating feature-specific frameworks.
 ## Human Approval Flow
 
 1. Compose `kickside.inbox:block.review` in a Flow.
-2. Configure the reviewer assignment and decision input.
+2. Configure the prompt and decision input for the Flow runner.
 3. Let Blocks/Dataflow commit the durable park and arm the Inbox item.
 4. Submit the decision through Inbox’s action interface.
 5. Resume using the Flow ID and native signal ID under its saved executor.
