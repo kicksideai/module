@@ -33,6 +33,12 @@ belong to this module; inspect their exact IDs before rebuilding.
 The shell gives a page a definite-height surface. For a full page, `:host`
 needs `display: block; height: 100%; min-height: 0;`; the page root needs
 `height: 100%; overflow-y: auto;` so content scrolls inside that surface.
+Set `wippyConfig.containerClasses` and include the corresponding wrapper-height
+rule in the element's inline stylesheet. The shadow mount wrapper must fill
+the allocated slot before either the loader or the page renders. Use normal
+document flow for page content. Keep a fixed header outside a scrollable
+body, or keep scrolling inside the table card when that card owns scrolling.
+Reserve absolute positioning for bounded overlays and canvas controls.
 Use semantic `--p-*` tokens and PrimeVue components where available. The
 facade owns the `--p-focus-ring-*` values and `--p-focus-ring-shadow`; a
 component chooses which of its elements receives `:focus-visible` and uses
@@ -41,23 +47,51 @@ focus CSS. The module must not hardcode focus colors or lengths.
 
 ## Load the implementation on first use
 
-Keep the entry small, so a registered tag costs little at startup. The entry holds the element class, its schema, `webComponent()` and `define(import.meta.url, Element)`. The root component and its imports sit behind a dynamic `import()`. An entry imports only types from any module the lazy code also uses.
+Keep the registration entry small. Export `webComponent()` and call
+`define(import.meta.url, Element)` in that entry. Import the root and its
+plugins from a separate module with a dynamic `import()`.
 
-Choose the loader for the surface:
+Use `lazyVueConfig(importer, options)` from `@wippy-fe/webcomponent-vue`.
+Use `surface: 'page'` for a route and `surface: 'compact'` for a control.
+Provide loading and failure labels. The helper emits `error` with
+`{ message, error }` if the implementation fails. Reserve a compact
+control's height only while it loads or shows an error. Use
+`[data-lazy-state]` for this rule. A full page needs a definite height
+through its element, mount wrapper, and root. Use normal flow and put
+scrolling in the page body or other region that owns scrolling.
 
-- A page or large panel returns its mount configuration from `vueConfig.lazyConfig`, with the root component and its plugins in a module beside the entry. The wrapper shows `wippy-loading` during the import. That loader takes the viewport height as an only child, so set `wippy-loading, wippy-error { height: 100%; }` in the component's stylesheet.
-- A compact control uses `defineAsyncComponent` as its `rootComponent`, with a small loading root and a failure root. Mark both with `data-lazy-state`, as KickSide's `lazy.ts` does, and reserve the control's loaded height while it loads or fails, with `:host > div:empty, :host > div:has(> [data-lazy-state])`. Measure that height at the width where the tag is placed. Reserve height only, because the parent sets the width. A permanent minimum on `:host` leaves blank space on a loaded tag that renders shorter or empty. A tag that can render nothing after it loads cannot use `:empty`, because Vue's comment placeholder still matches it, so show its loader without a delay. Keep the component's layout while its own data loads, and reserve a child tag's height in the parent until the child is registered.
-- A headless coordinator or a small component can stay eager. Record the measured reason.
+Registration, mounting, data readiness, and size have separate signals:
 
-Keep the declared error contract. A `lazyConfig` rejection emits `error` with `{ message }` only, so a component that declares more fields catches the rejection and returns a mount configuration whose root emits the declared detail. The wrapper emits `load` right after connect, before a lazy implementation mounts, so `load` means the element is connected and not that its content exists.
+- `customElements.whenDefined(tag)` means the tag can be created.
+  Call the constructor's `preloadImplementation()` to start its import
+  before insertion. Handle rejection. The import is shared with mounting.
+- Legacy `load` and `ready` keep their existing behavior. An opted-in Vue
+  element emits a direct `wippy-mounted` event after the real root mounts.
+  Attach the listener to the element before insertion. Read
+  `wippyMountState` to check an element that is already attached.
+- The page owns its data loading, empty, and failure states. A mount signal
+  says the Vue root exists. A page can still have a pending data request.
+- For content-sized layouts, observe the actual element box with
+  `ResizeObserver`. Apply sizes only to the current slot or element and
+  disconnect the observer on replacement. The component can change size
+  after fonts, data, or user actions change its layout.
 
-Build settings:
+The KickSide shell starts registration for the selected page and preloads its
+implementation before insertion. It subscribes to mount readiness before
+attaching the element. Pending content stays hidden and inert. The shell
+shows its loading indicator after 250 ms and, once visible, keeps it for at
+least 400 ms. It reveals the mounted page and removes the indicator in the
+same update. An eight-second deadline covers registration and mount. A
+supported component that misses the deadline is removed and offers Retry;
+an already attached legacy component keeps the reveal fallback. Retry starts
+a new attempt. Data errors after mount remain inside the page.
 
-- `external` comes from `Object.keys(hostImportMap.imports)`, read from a pinned snapshot of the Host's `import-map.json`. Browser import maps have no `primevue/*` wildcard, and PrimeVue CSS still comes from `hostCssKeys`.
-- `preserveEntrySignatures: 'strict'` keeps `webComponent()`, which the Host factory path requires.
-- `output.manualChunks` places `@wippy-fe/webcomponent-*` in its own chunk. Without it, a lazy chunk can import the entry back without the Host's `?declare-tag=` query, and a second copy of the entry runs.
-
-Inspect the emitted entry after building. It must contain its own `import.meta.url` and the `webComponent` export, and no chunk may import an entry file.
+Use `wippyComponentPlugin({ required: true, lazyEntries: ['index'] })`.
+Keep `preserveEntrySignatures: 'strict'` and take the exact external names
+from the pinned Web Host import map. Keep the shared wrapper in its own
+chunk so implementation imports cannot pull the registration entry back
+in under a URL without the Host's `?declare-tag=` query. Include a browser
+check for tag, alias, and factory registration before release.
 
 The application shell takes Vue, pinia, vue-router, `@iconify/vue` and PrimeVue from the same Host import map snapshot. The shell and every surface it mounts therefore share one Vue, PrimeVue and Iconify instance, and the Tabler collection that the shell registers is available to every surface. The shell still vendors `@wippy-fe/proxy`, luxon, axios and nanoevents as lock-pinned local files (`app/frontend/applications/main/shell-vendor.mjs`).
 

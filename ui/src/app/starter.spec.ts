@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { ref } from 'vue'
 import { HOST_VISIBILITY_PROVIDER } from '@wippy-fe/webcomponent-vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import Starter from './starter.vue'
+import StatusPage from './starter.vue'
 
 const proxy = vi.hoisted(() => ({
   get: vi.fn(),
@@ -33,7 +33,7 @@ describe('starter page refresh', () => {
   afterEach(() => wrapper?.unmount())
 
   function open() {
-    wrapper = mount(Starter, {
+    wrapper = mount(StatusPage, {
       global: { provide: { [HOST_VISIBILITY_PROVIDER]: visible }, stubs: { Icon: true } },
     })
     return wrapper
