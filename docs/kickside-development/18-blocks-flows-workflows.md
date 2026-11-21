@@ -122,14 +122,17 @@ This remains true when the wait is below an Agent node or nested Flow:
 - the Flow's persisted execution identity authorizes resume;
 - restart recovery reconstructs that identity before the orchestrator resumes.
 
-`kickside.inbox:block.review` is the reference implementation: Inbox owns
-assignment and the review item; Blocks/Dataflow own parking and signaling.
+`kickside.inbox:block.review` creates the review in the Flow runner's Inbox.
+Inbox owns the review item and decision. Blocks/Dataflow own parking and signaling.
 Visual Workflows is not a dependency of the Inbox Block.
 
 ### Inbox review fields
 
 `kickside.inbox:block.review` receives the object to review as `input` and requires
 `config.prompt`. Without `title_expr`, the prompt remains the Inbox item title.
+If the step has an assignee saved by an earlier version, choose **Use Flow runner**
+to clear it before publishing. This edit affects future runs. Already parked
+reviews keep their original recipient.
 An optional `title_expr` derives a title for each item, including each iteration
 of a For each. When it differs from the title, the prompt appears above the
 reviewed facts. The expression uses the same Wippy expression language as Automation expression
