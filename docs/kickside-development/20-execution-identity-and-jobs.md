@@ -34,8 +34,12 @@ service prepares a one-use identity token; its command carries that token.
 Automation's `set_execution_identity` control coordinates this path. A regular
 `SET_CONTEXT` or `PATCH_CONTEXT` cannot change it. Product execution roots
 select ordinary User principals, including bot accounts for durable work. Grant
-the bot’s resource access and the operator’s delegation separately. Framework
-workers use their declared system identity. The component owner cannot grant itself `may_act_as`.
+the bot’s resource access and the operator’s delegation separately. The
+component owner cannot grant itself `may_act_as`.
+
+For a framework-created component whose primary fold needs only its assigned
+event range and module resources, use a component-owned projection worker.
+[Declaring the fold and its permissions](03-threads-events-projections.md#fold-a-framework-created-components-primary-thread)
 
 A synchronous tool or Block executes in its calling frame. It should check
 component access in that frame and pass the selected identity to durable
