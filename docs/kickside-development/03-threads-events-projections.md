@@ -131,16 +131,24 @@ projections:
     input_mode: prefetch_events
 ```
 
-The referenced entry is a `function.lua` with `meta.type:
-projection.worker`, `method: run`, and no configured `security` frame.
-`func://` targets `function.lua`; `proc://` targets a supervised
-`process.lua`. Both schemes are required and the registry kind must match.
-A non-system worker cannot be private. The owner may register a cursor through
-`register_projection`, including `kind`, optional keys, start position,
-worker config, event filter, and paired `debounce_idle_ms` and
-`debounce_max_ms`. The scheduler stores the component's execution identity (or
-an explicit system identity) on the cursor. It does not capture the first
-user to touch the thread.
+Use `func://` with a `function.lua` entry for a bounded fold, such as CRM's
+transactional read model. Use `proc://` with a supervised `process.lua` entry
+for work such as KB10 source materialization. Both declare
+`meta.type: projection.worker`. Core owns the execution frame for both.
+A worker that needs a native capability can declare `security.policies` entries
+marked `meta.service_only: true` with no groups. Keep each policy scoped to
+the operation and resources the worker uses. [CRM fold](https://github.com/kicksideai/crm/blob/crm-v0.6.14/src/persist/projection.lua) · [KB10 source process](https://github.com/kicksideai/providers/blob/kb10-v0.2.39/kb10/src/injection/_index.yaml)
+
+Use `register_projection` when worker selection, configuration or lifetime
+depends on a particular instance. Work uses it when a board enables a plugin.
+The call takes projection and cursor keys, start position, config, event filters
+and optional paired `debounce_idle_ms` and `debounce_max_ms`. On a user-owned
+primary thread, the Threads contract loads the component's protected execution
+identity. The HTTP projection registration endpoint captures the authenticated
+requester's identity for the component. Core checks the selected identity's
+current access before delivering a batch.
+Access to the source stream and authorization for returned appends are separate
+checks. [Work plugin registration](https://github.com/kicksideai/components/blob/work-v0.1.24/work/src/extensions/plugin_projections.lua)
 
 In `prefetch_events` mode, `run(input)` receives `thread_id`, `cursor`,
 `projection`, `events`, `trace_context`, and `range = { from_seq, to_seq,
@@ -154,11 +162,10 @@ child process; SQLite's single pooled connection otherwise deadlocks.
 `cursor_only` workers read their own page. The worker can return a `patch`,
 but a returned `meta` field does not update component public metadata.
 
-For UI badges and status, call `component.set_meta(thread_id, fields)` from
-the projection. `platform/inbox/src/persist/projection.lua` is the working
-fold and public-meta example; [CRM's projection](https://github.com/kicksideai/crm/tree/main/src/persist)
-shows a normalized read model. The worker runs under its stored, live-resolved
-execution identity. Do not synthesize an actor or scope in the worker.
+For UI badges and status, Channel's responder calls `component.set_meta` on
+its component. Inbox publishes summary counts from a declared post-commit
+callback through its scoped publisher. Each effect uses the authority required
+by its destination. [Channel responder](https://github.com/kicksideai/kickside/blob/channel-v0.2.15/platform/channel/src/responder/responder_projection.lua) · [Inbox fold and callback](https://github.com/kicksideai/kickside/blob/inbox-v0.1.79/platform/inbox/src/persist/_index.yaml)
 
 A durable writer that needs projection acknowledgment can call
 `catch_up_projection({ thread_id = id, kind = kind, deadline = deadline })`.
@@ -169,6 +176,37 @@ so the blocking wait ends within its execution ceiling. The wait wakes the
 projection slot and observes its cursor; it does not execute the projection in
 the caller. Core's projection slot job declares `meta.job_class: awaited` for
 reserved worker capacity. Read endpoints continue to read committed state.
+
+### Fold a framework-created component's primary thread
+
+For a component created by your module without a stored user execution
+identity, declare the fold in the kind's `meta.projections` with
+`input_mode: prefetch_events`. Mark its function worker as private and
+component-owned.
+
+```yaml
+kind: function.lua
+meta:
+  type: projection.worker
+  private: true
+  component_owned: true
+```
+
+The kind, worker and worker policies must belong to the same installed module.
+Core validates the framework-created component's declaration when it attaches
+the primary projection. On dispatch it matches the thread, projection and cursor
+keys, worker, event filter, configuration and debounce settings. It delivers
+the assigned range under an isolated actor with an empty caller scope. Give
+the worker a service-only policy for any SQL resource or owner function it
+uses. For example, a fold can update its own tables and return `body` and
+`last_seq`. Access to another component, publishing an event or contacting
+an external service requires its own authorized path.
+
+This mode supports function workers that return a fold without returned
+event appends or a `post_commit_ref`. If the same kind also has user-owned
+instances, Core checks the marked worker against the same installed declaration
+and uses the stored execution identity and its current credential restrictions
+for access to the source.
 
 ## Reads, retention, and realtime
 
