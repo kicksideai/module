@@ -145,43 +145,56 @@ success branch must not carry an `error`
 A module may bind a contract it does not own, including vendored `wippy.*`
 contracts. `kickside/models` binds the vendor LLM seams in
 `platform/models/src/_index.yaml`: a default `wippy.llm:model_resolver`
-implementation, and a driver binding that implements four contracts —
-`wippy.llm:generator`, `wippy.llm:embedder`, `wippy.llm:provider`, and
-`wippy.llm:structured_output` — in one entry:
+implementation, and a driver binding that implements five contracts —
+`wippy.llm:provider`, `wippy.llm:generator`, `wippy.llm:embedder`,
+`wippy.llm:structured_output`, and `wippy.llm:evaluator` — in one entry:
 
 ```yaml
 - name: model_resolver
   kind: contract.binding
   meta:
-    comment: App-level model resolver. Resolves DB-backed provider profiles/model overlays, then canonical registry model definitions.
+    comment: App-level model resolver. Resolves DB-backed provider profiles/model overlays before registry fallback.
   contracts:
     - contract: wippy.llm:model_resolver
       default: true
       methods:
-        resolve: kickside.models:model_resolver_func
+        resolve: kickside.models.catalog:model_resolver_func
 
-- name: openai_compat_plain.driver
+- name: profile_driver
   kind: contract.binding
-  meta:
-    comment: Plain-message OpenAI-compatible driver wrapper owned by kickside/models.
   contracts:
-    - contract: wippy.llm:generator
-      methods:
-        generate: kickside.models:openai_compat_plain.generate
-    - contract: wippy.llm:embedder
-      methods:
-        embed: wippy.llm.openai_compat:embed
     - contract: wippy.llm:provider
-      methods:
-        status: wippy.llm.openai_compat:status
+      methods: {status: kickside.models.providers.profile:status}
+    - contract: wippy.llm:generator
+      methods: {generate: kickside.models.providers.profile:generate}
+    - contract: wippy.llm:embedder
+      methods: {embed: kickside.models.providers.profile:embed}
     - contract: wippy.llm:structured_output
-      methods:
-        structured_output: wippy.llm.openai_compat:structured_output
+      methods: {structured_output: kickside.models.providers.profile:structured_output}
+    - contract: wippy.llm:evaluator
+      methods: {evaluate: kickside.models.providers.profile:evaluate}
 ```
 
-Binding methods may point at functions in other namespaces, as the embedder
-method above does: implementing a contract means owning the mapping, not
-necessarily every function body.
+Binding methods may point at functions in other namespaces, as these do:
+implementing a contract means owning the mapping, not necessarily every
+function body.
+
+A provider entry that needs a vendored driver configured differently binds
+that driver and sets the driver's declared options instead of copying it.
+The plain-chat provider binds `wippy.llm.openai_compat:driver` with
+`text_content: string` for endpoints that accept only string message content:
+
+```yaml
+- name: openai_compat_plain.provider
+  kind: registry.entry
+  meta:
+    type: llm.provider
+  driver:
+    id: wippy.llm.openai_compat:driver
+    options:
+      base_url_env: wippy.llm.openai_compat:base_url
+      text_content: string
+```
 
 Bindings may declare metadata used by discovery:
 
