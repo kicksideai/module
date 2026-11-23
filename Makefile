@@ -19,6 +19,8 @@ setup:
 	npm --prefix ui ci
 check:
 	node scripts/check-module.mjs
+	node scripts/check-connection-secrets.mjs
+	node --test scripts/check-connection-secrets.test.mjs
 	node scripts/test-initializer.mjs
 	node .github/scripts/test_release_workflow.mjs
 	python3 -B .github/scripts/test_delivery.py

@@ -34,6 +34,8 @@ make postgres-down
 
 The [Makefile](Makefile) owns the commands. The bundled [developer handbook](docs/README.md) is an exact copy of the canonical handbook shipped by KickSide; `make sync-handbook` updates it and `make check-handbook` detects drift. See the [module authoring guide](https://github.com/kicksideai/docs/blob/main/building-modules/index.md) for contracts, requirements, and application integration.
 
+`make check` verifies that password fields in standard connection forms have matching `meta.secret_fields` declarations. Existing modules can run `node check-connection-secrets.mjs [source-directory]` using the standalone script from a pinned revision of this repository. It defaults to `src` and uses the Wippy CLI already on `PATH`. [Connection declaration checker](scripts/check-connection-secrets.mjs)
+
 ![The starter status page shows an empty log in a fresh demonstration installation](https://raw.githubusercontent.com/kicksideai/docs/main/using/assets/module/starter.png)
 
 License: [MIT](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md).

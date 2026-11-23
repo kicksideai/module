@@ -51,6 +51,9 @@ A provider connection is a `contract.binding`. The canonical rules
 - `meta.class: [connection]` — add `reply_provider` when the provider replies.
 - `meta.credential_schema` — the fields the Connect UI collects; also the
   server-side allowlist for `private_context`.
+- Declare each secret stored in Component private context under
+  `meta.secret_fields`, using its path in the stored context. Component uses
+  this declaration to encrypt the value.
 - Every contract entry carries `context_required: [component_id]`.
 - The implementation imports `kickside.connection:base_connection` for
   `get_status`/`delete` boilerplate; `test_connection`/`discover_resources`
@@ -72,6 +75,8 @@ inspect its current published entry through Hub `plan`/`list` with
     group: Developer
     class:
       - connection
+    secret_fields:
+      - {path: [token], type: string}
     credential_schema:            # the fields the Connect UI collects
       version: "1.0"
       submit_label: Connect
@@ -110,6 +115,12 @@ base library; the transport does the provider-specific work.
   enforces `required`, type, `select` options, and `required_if`. The schema
   is both the UI form spec and the server-side allowlist
   (`platform/connection/src/api/create_policy.lua`).
+- The password input masks a value on screen. Declare its stored path for
+  encryption as shown above. Also declare credentials collected by another
+  input type, such as an incoming webhook URL that grants permission to post.
+  For an existing binding, verify the upgrade with a connection created by
+  the previous release. Check that its stored credential moves into the
+  encrypted envelope and the authorized provider operation still succeeds.
 - Providers read credentials through the actor-validated component service,
   through `component.open(component_id, component.ACCESS.READ, contract_id)`
   or `component.get_context(component_id, required_access)`. Trusted private
