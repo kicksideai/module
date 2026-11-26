@@ -1,6 +1,6 @@
 import { defineComponent as _, ref as u, onUnmounted as v, openBlock as a, createElementBlock as l, createElementVNode as s, createVNode as f, unref as p, toDisplayString as d, createTextVNode as h } from "vue";
 import { on as y, api as g } from "@wippy-fe/proxy";
-import { a as b } from "./wc-runtime-BMe_f3Uc.js";
+import { u as b } from "./wc-runtime-Dusx9e03.js";
 import { Icon as k } from "@iconify/vue";
 const C = { class: "st" }, w = { class: "st-head" }, E = { class: "st-head-icon" }, N = { class: "st-title" }, V = {
   key: 0,
@@ -67,4 +67,4 @@ const C = { class: "st" }, w = { class: "st-head" }, E = { class: "st-head-icon"
 export {
   U as mountConfig
 };
-//# sourceMappingURL=lazy-mount-Dncfuk5r.js.map
+//# sourceMappingURL=lazy-mount-CAc038Oy.js.map

@@ -107,6 +107,30 @@ still apply. Automations, projections, and workflows
 already own their job slots: application code calls their public contracts
 instead of creating a competing scheduler.
 
+## Settle job-backed records
+
+Store the job ID returned by enqueue with the owner record. A one-shot job
+ends in `done`, `dead`, or `cancelled`. A parked reusable slot stays
+`pending`. Jobs sends the `kickside.jobs.lease_released` change hint after
+settlement commits. The hint carries the job ID and owner locator.
+When a caller uses `jobs.complete_tx`, it owns the commit and any
+post-commit notification.
+
+Register a function with `meta.type: kickside.retention.owner`. Core calls it
+with the hint in `input.change` and also calls it on startup and at the
+owner's reported deadline. Read committed state with
+`jobs.get_job_statuses(ids)` or `jobs.get_job(id)` and settle the owner's
+records idempotently. While records remain unresolved, return their earliest
+next check as `deadline_ms` in UTC Unix milliseconds. When a write introduces
+an earlier deadline, call `kickside.core.retention:notifier` after commit with
+`{kind = "owner_eligibility_changed"}`. This lets the callback find work even
+when a lease-release hint never arrives.
+
+Jobs retention can remove a terminal job. The status map then omits its ID,
+and `get_job` returns nil. If the owner has no durable result, settle the
+missing job as a failure. Core invokes the callback outside Jobs'
+transaction. Jobs runs no owner code during settlement.
+
 ## Awaited jobs and termination
 
 A worker entry may declare `meta.job_class: awaited` when other jobs wait for

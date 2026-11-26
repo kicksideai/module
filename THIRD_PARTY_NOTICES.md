@@ -73,19 +73,19 @@ License: MIT
 
 Lockfiles: `ui/package-lock.json`
 
-### npm: @wippy-fe/theme@0.0.56
+### npm: @wippy-fe/theme@0.0.71
 
 License: UNLICENSED
 
 Lockfiles: `ui/package-lock.json`
 
-### npm: @wippy-fe/webcomponent-core@0.0.56
+### npm: @wippy-fe/webcomponent-core@0.0.71
 
 License: UNLICENSED
 
 Lockfiles: `ui/package-lock.json`
 
-### npm: @wippy-fe/webcomponent-vue@0.0.56
+### npm: @wippy-fe/webcomponent-vue@0.0.71
 
 License: UNLICENSED
 
